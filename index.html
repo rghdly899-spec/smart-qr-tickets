@@ -104,7 +104,7 @@
                 </div>
                 
                 <div class="pt-4 border-t">
-                    <div class="text-gray-700 font-bold text-sm mb-3">📊 التذاكر الجاهزة (المدمجة على تصميمك):</div>
+                    <div class="text-gray-700 font-bold text-sm mb-3">📊 التذاكر الجاهزة (دائمة ومحفوظة):</div>
                     <div id="ticketsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-2"></div>
                 </div>
             </section>
@@ -122,7 +122,6 @@
 
     <script>
         const SUPABASE_URL = "https://jzvoshwxmdhoxqaqvblx.supabase.co";
-        // تنبيه: تأكد أن المفتاح بالأسفل هو الـ anon public key المستخرج من إعدادات الـ API في المشروع
         const SUPABASE_KEY = "sb_publishable_lqf87dZLacAaZr3q9i63Mw_x9aTxA3R";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -130,7 +129,6 @@
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
 
-        // دالة إنشاء الحساب المحسنة والناعمة تماماً
         async function handleSignup() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -160,10 +158,7 @@
                     btn.innerText = "✅ تم الدخول!";
                     btn.classList.replace('bg-gray-100', 'bg-green-500');
                     btn.classList.replace('text-gray-800', 'text-white');
-                    
-                    setTimeout(() => {
-                        updateAuthState(data.session);
-                    }, 500);
+                    setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
             } catch (err) {
                 alert("حدث خطأ في الاتصال بالسيرفر.");
@@ -173,7 +168,6 @@
             }
         }
 
-        // دالة تسجيل الدخول المحسنة والناعمة
         async function handleLogin() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -197,10 +191,7 @@
                 } else if (data.session) {
                     btn.innerText = "✅ مرحباً بك!";
                     btn.classList.replace('bg-purple-600', 'bg-green-500');
-                    
-                    setTimeout(() => {
-                        updateAuthState(data.session);
-                    }, 500);
+                    setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
             } catch (err) {
                 alert("حدث خطأ في الاتصال بالسيرفر.");
@@ -350,14 +341,12 @@
 
         canvasWrapper.addEventListener('touchend', function(e) { if (e.touches.length < 2) { initialPinchDist = null; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
-        // دالة جلب التذاكر المعدلة لفلترة البيانات وعزلها لكل مستخدم
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
                 const grid = document.getElementById('ticketsGrid');
                 grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
                 
-                // التعديل الأمني هنا لتصفية التذاكر بحسب المستخدم الحالي
                 const { data, error } = await supabaseClient
                     .from('tickets')
                     .select('*')
@@ -373,74 +362,143 @@
             } catch (err) { console.error(err); }
         }
 
+        // دالة تحويل التصميم إلى ملف ليتم رفعه
+        function generateTicketBlob(code, indexNumber) {
+            return new Promise((resolve) => {
+                const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
+                const tempQrDiv = document.getElementById('tempQr');
+                tempQrDiv.innerHTML = '';
+                new QRCode(tempQrDiv, { 
+                    text: verifyUrl, 
+                    width: 400, 
+                    height: 400, 
+                    colorDark: document.getElementById('qrColorPicker').value, 
+                    colorLight: "#ffffff", 
+                    correctLevel: QRCode.CorrectLevel.L 
+                });
+                
+                setTimeout(() => {
+                    const qrImg = tempQrDiv.querySelector('img');
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = originalInviteImage.width;
+                    canvas.height = originalInviteImage.height;
+                    
+                    ctx.drawImage(originalInviteImage, 0, 0);
+                    
+                    const img = new Image();
+                    img.src = qrImg.src;
+                    img.onload = function() {
+                        selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
+                        ctx.drawImage(img, selectedX, selectedY, selectionWidth, selectionWidth);
+                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                        ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                        ctx.fillText(convertToArabicNumbers(indexNumber), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
+                        
+                        canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
+                    };
+                }, 50);
+            });
+        }
+
+        // دالة التوليد والرفع للسحابة
         async function processTicketsWithImage() {
             if (!originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
             if (document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
             if (!currentUser) { alert("الرجاء تسجيل الدخول أولاً!"); return; }
+            
+            const btn = document.getElementById('processBtn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "جاري دمج ورفع التذاكر... ⏳";
+
             try {
-                const count = document.getElementById('ticketCount').value; const ticketsToInsert = [];
-                for (let i = 0; i < count; i++) { ticketsToInsert.push({ code: 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase(), is_used: false, user_id: currentUser.id }); }
+                const count = parseInt(document.getElementById('ticketCount').value);
+                const ticketsToInsert = [];
+                
+                for (let i = 0; i < count; i++) {
+                    const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    
+                    const imageBlob = await generateTicketBlob(code, i + 1);
+                    const filePath = `${currentUser.id}/${code}.png`;
+                    
+                    const { error: uploadError } = await supabaseClient.storage
+                        .from('tickets')
+                        .upload(filePath, imageBlob, { contentType: 'image/png', upsert: true });
+                        
+                    if (uploadError) throw uploadError;
+                    
+                    ticketsToInsert.push({ code: code, is_used: false, user_id: currentUser.id });
+                }
+                
                 const { error } = await supabaseClient.from('tickets').insert(ticketsToInsert);
-                if (error) { alert('خطأ في الحفظ: ' + error.message); return; }
-                alert(`تم دمج ${count} تذاكر جديدة فوق تصميمك بنجاح! ✨`); loadExistingTickets(); 
-            } catch (err) { alert(err.message); }
+                if (error) throw error;
+                
+                alert(`تم دمج ورفع ${count} تذاكر بنجاح! ستبقى محفوظة دائماً ✨`); 
+                loadExistingTickets(); 
+            } catch (err) { 
+                alert("حدث خطأ أثناء المعالجة: " + err.message); 
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
         }
 
+        // دالة العرض من السيرفر مباشرة
         async function renderMergeTicketCard(gridTarget, ticket, indexNumber) {
             const card = document.createElement('div');
             card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
+            
+            const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`);
+            const imageUrl = data.publicUrl;
+
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10">
                 <div class="flex items-center justify-between w-full px-1 pt-2">
                     <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">${ticket.code}</span>
                     <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-full font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
                 </div>
-                <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Merged Ticket"/>
+                <div class="bg-gray-50 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center">
+                    <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Merged Ticket"/>
                 </div>
             `;
             gridTarget.appendChild(card);
-            const verifyUrl = `${window.location.href.split('?')[0]}?code=${ticket.code}`;
-            const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
-            new QRCode(tempQrDiv, { text: verifyUrl, width: 400, height: 400, colorDark: document.getElementById('qrColorPicker').value, colorLight: "rgba(0,0,0,0)", correctLevel: QRCode.CorrectLevel.L });
-            await new Promise(resolve => setTimeout(resolve, 50));
-            const qrImg = tempQrDiv.querySelector('img');
-            if (qrImg) {
-                if (originalInviteImage && document.getElementById('selectionMarker').style.display !== 'none') { createMergedTicketImage(qrImg.src, indexNumber, ticket.code); } 
-                else { const finalImgElement = document.getElementById(`combined-img-${ticket.code}`); if (finalImgElement) finalImgElement.src = qrImg.src; }
-            }
         }
 
-        function createMergedTicketImage(qrBase64, number, ticketCode) {
-            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-            canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
-            ctx.drawImage(originalInviteImage, 0, 0);
-            const img = new Image(); img.src = qrBase64;
-            img.onload = function() {
-                selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-                ctx.drawImage(img, selectedX, selectedY, selectionWidth, selectionWidth);
-                ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
-                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                ctx.fillText(convertToArabicNumbers(number), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
-                const finalImgElement = document.getElementById(`combined-img-${ticketCode}`);
-                if (finalImgElement) { finalImgElement.src = canvas.toDataURL('image/png'); }
-            };
-        }
-
+        // تحميل آمن للصور عند المشاركة
         async function shareSelectedTicketsGroup() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { alert("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌"); return; }
             const filesArray = [];
+            
+            const btn = document.querySelector('button[onclick="shareSelectedTicketsGroup()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "جاري التجهيز... ⏳";
+            
             for (let i = 0; i < checkboxes.length; i++) {
-                const cb = checkboxes[i]; const imgElement = document.getElementById(`combined-img-${cb.dataset.ticketCode}`);
-                if (imgElement && imgElement.src && imgElement.src.startsWith('data:image')) {
-                    const blob = await (await fetch(imgElement.src)).blob();
-                    filesArray.push(new File([blob], `تذكرة_رقم_${cb.dataset.ticketNumber}.png`, { type: 'image/png' }));
+                const cb = checkboxes[i];
+                const ticketCode = cb.dataset.ticketCode;
+                const ticketNumber = cb.dataset.ticketNumber;
+                
+                const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`);
+                
+                try {
+                    const response = await fetch(data.publicUrl);
+                    const blob = await response.blob();
+                    filesArray.push(new File([blob], `تذكرة_رقم_${ticketNumber}.png`, { type: 'image/png' }));
+                } catch (e) {
+                    console.error("فشل تحميل الصورة للمشاركة", e);
                 }
             }
-            if (navigator.canShare && navigator.canShare({ files: filesArray })) { await navigator.share({ files: filesArray, title: 'مشاركة التذاكر المحددة' }); } 
-            else { alert("المشاركة غير مدعومة على هذا المتصفح."); }
+            
+            btn.innerText = originalText;
+
+            if (filesArray.length > 0 && navigator.canShare && navigator.canShare({ files: filesArray })) { 
+                await navigator.share({ files: filesArray, title: 'مشاركة التذاكر المحددة' }); 
+            } else { 
+                alert("المشاركة غير مدعومة على هذا المتصفح أو فشل جلب الصور."); 
+            }
         }
 
         async function deleteSelectedTickets() {
@@ -449,34 +507,38 @@
             if (confirm(`هل أنت متأكد من حذف الـ (${checkboxes.length}) تذاكر المحددة؟`)) {
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
+                    const filesToDelete = Array.from(checkboxes).map(cb => `${currentUser.id}/${cb.dataset.ticketCode}.png`);
+                    
+                    await supabaseClient.storage.from('tickets').remove(filesToDelete);
                     const { error } = await supabaseClient.from('tickets').delete().in('id', idsToDelete);
+                    
                     if (error) { alert("فشل الحذف: " + error.message); return; }
                     alert("تم الحذف بنجاح! 🗑️"); loadExistingTickets();
                 } catch (err) { alert(err.message); }
             }
         }
 
-        let allSelected = false;
         function toggleSelectAll() {
             allSelected = !allSelected;
             document.querySelectorAll('input[name="ticketSelect"]').forEach(cb => cb.checked = allSelected);
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
         }
 
-        // دالة تصفير النظام المحسنة لحذف تذاكر المستخدم الحالي فقط
         async function clearAllTickets() {
-            if (confirm("🚨 تحذير! سيتم تصفير حسابك وحذف جميع تذاكرك أنت فقط. هل أنت متأكد؟")) {
+            if (confirm("🚨 تحذير! سيتم تصفير حسابك وحذف جميع تذاكرك وصورك. هل أنت متأكد؟")) {
                 try {
                     const grid = document.getElementById('ticketsGrid');
                     grid.innerHTML = '<p class="text-red-500 font-bold animate-pulse text-center">جاري التصفير...</p>';
                     
-                    // التعديل الأمني هنا لمنع حذف بيانات الآخرين
-                    const { error } = await supabaseClient
-                        .from('tickets')
-                        .delete()
-                        .eq('user_id', currentUser.id);
-                        
+                    const { data: fileList } = await supabaseClient.storage.from('tickets').list(currentUser.id);
+                    if (fileList && fileList.length > 0) {
+                        const filesToDelete = fileList.map(f => `${currentUser.id}/${f.name}`);
+                        await supabaseClient.storage.from('tickets').remove(filesToDelete);
+                    }
+                    
+                    const { error } = await supabaseClient.from('tickets').delete().eq('user_id', currentUser.id);
                     if (error) { alert("فشل الحذف الكامل: " + error.message); loadExistingTickets(); return; }
+                    
                     alert("تم تصفير تذاكرك بالكامل بنجاح! 🧹");
                     grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً.</p>';
                 } catch (err) { alert(err.message); }
