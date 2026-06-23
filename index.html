@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -23,6 +24,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
 
+    <!-- شاشة تسجيل الدخول -->
     <div id="authSection" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 hidden mt-10 border-t-4 border-purple-600">
         <div class="text-center">
             <h2 class="text-2xl font-bold text-gray-800">مرحباً بك 👋</h2>
@@ -44,6 +46,7 @@
         </div>
     </div>
 
+    <!-- لوحة التحكم الرئيسية -->
     <div id="mainContent" class="max-w-4xl mx-auto space-y-8 hidden">
         <div id="adminPanel" class="space-y-8">
             <header class="text-center bg-purple-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
@@ -56,6 +59,28 @@
             <section class="bg-white p-6 rounded-2xl shadow-md space-y-5">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-2">⚙️ لوحة دمج وتوليد التذاكر الذكية</h2>
                 
+                <!-- خيارات المناسبة ونوع التوليد -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+                        <label class="text-gray-700 font-semibold text-sm">📁 المجلد / اسم المناسبة:</label>
+                        <input type="text" id="eventNameInput" placeholder="مثال: زواج نورة..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-500">
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+                        <label class="text-gray-700 font-semibold text-sm">🛠️ نوع التوليد:</label>
+                        <div class="flex gap-4 pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-purple-700">
+                                <input type="radio" name="ticketMode" value="merged" checked onchange="toggleMode()" class="w-4 h-4 accent-purple-600">
+                                دعوة مدموجة
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-gray-600">
+                                <input type="radio" name="ticketMode" value="qr_only" onchange="toggleMode()" class="w-4 h-4 accent-purple-600">
+                                باركود مفرغ فقط
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex flex-wrap gap-6 bg-purple-50 p-4 rounded-xl border border-purple-100 items-center justify-start">
                     <div class="flex items-center gap-3">
                         <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والترقيم:</label>
@@ -68,7 +93,8 @@
                     </div>
                 </div>
 
-                <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <!-- قسم التصميم (يختفي إذا اختار باركود فقط) -->
+                <div id="designSection" class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all">
                     <div class="flex items-center gap-3">
                         <label class="text-gray-700 font-semibold text-sm">تحميل تصميم الدعوة (PNG/JPG):</label>
                         <input type="file" id="inviteUpload" accept="image/*" class="text-xs text-gray-500 bg-white p-1 rounded-xl border">
@@ -84,11 +110,11 @@
 
                 <div class="flex flex-wrap gap-6 items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                     <div class="flex items-center gap-2">
-                        <label class="text-gray-700 font-semibold text-sm">عدد التذاكر للدمج:</label>
-                        <input type="number" id="ticketCount" value="5" min="1" max="100" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50">
+                        <label class="text-gray-700 font-semibold text-sm">عدد التذاكر للتوليد:</label>
+                        <input type="number" id="ticketCount" value="5" min="1" max="500" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50">
                     </div>
-                    <button onclick="processTicketsWithImage()" id="processBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow flex items-center gap-2" disabled>
-                        ⚡ دمج وتوليد التذاكر الجاهزة
+                    <button onclick="processTickets()" id="processBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow flex items-center gap-2">
+                        ⚡ بدء التوليد والحفظ
                     </button>
                 </div>
                 
@@ -97,20 +123,21 @@
                         <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2.5 rounded-xl transition border shadow-sm">تحديد الكل</button>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">📤 مشاركة المحددة للألبوم</button>
+                        <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">📤 مشاركة وحفظ للألبوم</button>
                         <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف المحددة</button>
-                        <button onclick="clearAllTickets()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🚨 تصفير النظام</button>
+                        <!-- تم إزالة زر التصفير بالكامل -->
                     </div>
                 </div>
                 
-                <div class="pt-4 border-t">
-                    <div class="text-gray-700 font-bold text-sm mb-3">📊 التذاكر الجاهزة (دائمة ومحفوظة):</div>
-                    <div id="ticketsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-2"></div>
+                <div class="pt-6 border-t mt-4" id="ticketsContainerWrapper">
+                    <div class="text-gray-700 font-bold text-lg mb-4 flex items-center gap-2">🗂️ التذاكر المحفوظة (حسب المناسبة):</div>
+                    <div id="ticketsContainer" class="space-y-6"></div>
                 </div>
             </section>
         </div>
     </div>
 
+    <!-- شاشة الفحص -->
     <section id="scannerSection" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex-col justify-center items-center border-2 border-purple-400 mt-10">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
         <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4">
@@ -129,6 +156,16 @@
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
 
+        // تبديل الواجهة بين الداموج والباركود المفرغ
+        function toggleMode() {
+            const mode = document.querySelector('input[name="ticketMode"]:checked').value;
+            if (mode === 'qr_only') {
+                document.getElementById('designSection').classList.add('hidden');
+            } else {
+                document.getElementById('designSection').classList.remove('hidden');
+            }
+        }
+
         async function handleSignup() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -136,36 +173,18 @@
             const originalText = btn.innerText;
 
             if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
-
-            btn.innerText = "جاري التجهيز... ⏳";
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerText = "جاري التجهيز... ⏳"; btn.disabled = true;
 
             try {
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                
-                if (error) {
-                    alert("خطأ: " + error.message);
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else if (data.user && !data.session) {
-                    alert("تم إنشاء الحساب! الرجاء مراجعة بريدك الإلكتروني لتفعيله أولاً إذا كان خيار التفعيل نشطاً.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else if (data.user && data.session) {
+                if (error) { alert("خطأ: " + error.message); } 
+                else if (data.user && !data.session) { alert("مراجعة بريدك للتفعيل!"); } 
+                else if (data.user && data.session) {
                     btn.innerText = "✅ تم الدخول!";
-                    btn.classList.replace('bg-gray-100', 'bg-green-500');
-                    btn.classList.replace('text-gray-800', 'text-white');
                     setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
-            } catch (err) {
-                alert("حدث خطأ في الاتصال بالسيرفر.");
-                btn.innerText = originalText;
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            } catch (err) { alert("حدث خطأ."); }
+            finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
         async function handleLogin() {
@@ -175,30 +194,17 @@
             const originalText = btn.innerText;
 
             if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
-
-            btn.innerText = "جاري الدخول... ⏳";
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerText = "جاري الدخول... ⏳"; btn.disabled = true;
 
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                
-                if (error) {
-                    alert("خطأ في تسجيل الدخول، تأكد من البيانات.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else if (data.session) {
+                if (error) { alert("خطأ في تسجيل الدخول."); } 
+                else if (data.session) {
                     btn.innerText = "✅ مرحباً بك!";
-                    btn.classList.replace('bg-purple-600', 'bg-green-500');
                     setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
-            } catch (err) {
-                alert("حدث خطأ في الاتصال بالسيرفر.");
-                btn.innerText = originalText;
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            } catch (err) { alert("حدث خطأ."); }
+            finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
         async function handleLogout() {
@@ -240,7 +246,6 @@
                     ctx.drawImage(img, 0, 0);
                     canvas.classList.remove('hidden');
                     document.getElementById('mapInstruction').classList.remove('hidden');
-                    document.getElementById('processBtn').disabled = false;
                     document.getElementById('selectionMarker').style.display = 'none'; 
                     rawImageX = 0; rawImageY = 0;
                 };
@@ -320,32 +325,12 @@
         resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
         resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
 
-        canvasWrapper.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 2 && selectionMarker.style.display === 'block') {
-                e.preventDefault(); isDraggingMarker = false; 
-                initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialSizePinch = parseInt(qrSizeInput.value); selectionMarker.style.transition = 'none';
-            }
-        }, {passive: false});
-
-        canvasWrapper.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 2 && initialPinchDist !== null) {
-                e.preventDefault();
-                let newSize = initialSizePinch * (Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY) / initialPinchDist);
-                if (newSize < 50) newSize = 50; if (newSize > 1000) newSize = 1000;
-                qrSizeInput.value = Math.round(newSize);
-                const rect = canvas.getBoundingClientRect();
-                updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
-            }
-        }, {passive: false});
-
-        canvasWrapper.addEventListener('touchend', function(e) { if (e.touches.length < 2) { initialPinchDist = null; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
-
+        // تحميل التذاكر وتجميعها حسب المجلد/المناسبة
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
-                const grid = document.getElementById('ticketsGrid');
-                grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
+                const container = document.getElementById('ticketsContainer');
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
                 
                 const { data, error } = await supabaseClient
                     .from('tickets')
@@ -353,65 +338,111 @@
                     .eq('user_id', currentUser.id)
                     .order('created_at', { ascending: true });
                     
-                if (error) { grid.innerHTML = '<p class="col-span-full text-red-500 text-center">فشل تحميل التذاكر</p>'; return; }
-                grid.innerHTML = '';
-                if(data.length === 0) { grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
-                const batchMap = new Map();
-                data.forEach(ticket => { if (!batchMap.has(ticket.created_at)) { batchMap.set(ticket.created_at, []); } batchMap.get(ticket.created_at).push(ticket); });
-                for (const [batchKey, batchTickets] of batchMap) { for (let i = 0; i < batchTickets.length; i++) { await renderMergeTicketCard(grid, batchTickets[i], i + 1); } }
+                if (error) { container.innerHTML = '<p class="text-red-500 text-center">فشل تحميل التذاكر</p>'; return; }
+                container.innerHTML = '';
+                if(data.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
+                
+                // تصنيف التذاكر حسب اسم المناسبة
+                const eventsMap = new Map();
+                data.forEach(ticket => { 
+                    const eventName = ticket.event_name || 'عام (بدون مجلد)';
+                    if (!eventsMap.has(eventName)) { eventsMap.set(eventName, []); } 
+                    eventsMap.get(eventName).push(ticket); 
+                });
+                
+                // رسم التذاكر في مجاميع منظمة
+                for (const [eventName, tickets] of eventsMap) { 
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6';
+                    eventDiv.innerHTML = `<h3 class="font-bold text-lg mb-4 text-purple-700 border-b pb-2">📁 مجلد: ${eventName} <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mr-2">${tickets.length} تذكرة</span></h3>
+                                          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="grid-${eventName.replace(/\s+/g, '-')}"></div>`;
+                    container.appendChild(eventDiv);
+                    
+                    const grid = eventDiv.querySelector('div[id^="grid-"]');
+                    for (let i = 0; i < tickets.length; i++) { 
+                        await renderMergeTicketCard(grid, tickets[i], i + 1); 
+                    } 
+                }
             } catch (err) { console.error(err); }
         }
 
-        // دالة تحويل التصميم إلى ملف ليتم رفعه
+        // دالة تحويل التصميم إلى ملف ليتم رفعه (الباركود أصبح مفرغ/شفاف تماماً)
         function generateTicketBlob(code, indexNumber) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 const tempQrDiv = document.getElementById('tempQr');
                 tempQrDiv.innerHTML = '';
                 new QRCode(tempQrDiv, { 
-                    text: verifyUrl, 
-                    width: 400, 
-                    height: 400, 
+                    text: verifyUrl, width: 400, height: 400, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "#ffffff", 
+                    colorLight: "rgba(0,0,0,0)", // الباركود هنا مفرغ/شفاف
                     correctLevel: QRCode.CorrectLevel.L 
                 });
                 
                 setTimeout(() => {
-                    const qrImg = tempQrDiv.querySelector('img');
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = originalInviteImage.width;
-                    canvas.height = originalInviteImage.height;
+                    const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
                     
                     ctx.drawImage(originalInviteImage, 0, 0);
+                    selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
+                    ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
                     
-                    const img = new Image();
-                    img.src = qrImg.src;
-                    img.onload = function() {
-                        selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-                        ctx.drawImage(img, selectedX, selectedY, selectionWidth, selectionWidth);
-                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                        ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
-                        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                        ctx.fillText(convertToArabicNumbers(indexNumber), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
-                        
-                        canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
-                    };
+                    ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                    ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                    ctx.fillText(convertToArabicNumbers(indexNumber), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
+                    
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
                 }, 50);
             });
         }
 
-        // دالة التوليد والرفع للسحابة
-        async function processTicketsWithImage() {
-            if (!originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
-            if (document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
+        // دالة استخراج باركود مفرغ فقط (بدون تصميم) للرفع المباشر
+        function generateQROnlyBlob(code, indexNumber) {
+            return new Promise((resolve) => {
+                const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
+                const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
+                const qrSize = parseInt(document.getElementById('qrSizeInput').value);
+                
+                new QRCode(tempQrDiv, { 
+                    text: verifyUrl, width: qrSize, height: qrSize, 
+                    colorDark: document.getElementById('qrColorPicker').value, 
+                    colorLight: "rgba(0,0,0,0)", // مفرغ تماماً
+                    correctLevel: QRCode.CorrectLevel.L 
+                });
+
+                setTimeout(() => {
+                    const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const extraHeight = Math.max(30, Math.floor(qrSize * 0.2));
+                    
+                    canvas.width = qrSize; canvas.height = qrSize + extraHeight;
+                    // لا نضيف خلفية هنا لتظل مفرغة، نرسم الباركود مباشرة
+                    ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
+                    
+                    ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                    ctx.font = `bold ${Math.max(16, Math.floor(qrSize * 0.12))}px "Tajawal", sans-serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                    ctx.fillText(convertToArabicNumbers(indexNumber), qrSize / 2, qrSize + 5);
+                    
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
+                }, 50);
+            });
+        }
+
+        // دالة التوليد والرفع للسحابة (تشمل الدعوات والأكواد المفرغة وتحفظ اسم المناسبة)
+        async function processTickets() {
+            const mode = document.querySelector('input[name="ticketMode"]:checked').value;
+            const eventName = document.getElementById('eventNameInput').value.trim() || 'عام (بدون مجلد)';
+
+            if (mode === 'merged' && !originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
+            if (mode === 'merged' && document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
             if (!currentUser) { alert("الرجاء تسجيل الدخول أولاً!"); return; }
             
             const btn = document.getElementById('processBtn');
             const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = "جاري دمج ورفع التذاكر... ⏳";
+            btn.disabled = true; btn.innerText = "جاري التوليد والرفع... ⏳";
 
             try {
                 const count = parseInt(document.getElementById('ticketCount').value);
@@ -419,36 +450,37 @@
                 
                 for (let i = 0; i < count; i++) {
                     const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    let imageBlob;
                     
-                    const imageBlob = await generateTicketBlob(code, i + 1);
+                    if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1); } 
+                    else { imageBlob = await generateQROnlyBlob(code, i + 1); }
+                    
                     const filePath = `${currentUser.id}/${code}.png`;
-                    
                     const { error: uploadError } = await supabaseClient.storage
                         .from('tickets')
                         .upload(filePath, imageBlob, { contentType: 'image/png', upsert: true });
                         
                     if (uploadError) throw uploadError;
                     
-                    ticketsToInsert.push({ code: code, is_used: false, user_id: currentUser.id });
+                    // إضافة event_name لحفظ التذكرة تحت المجلد المناسب
+                    ticketsToInsert.push({ code: code, is_used: false, user_id: currentUser.id, event_name: eventName });
                 }
                 
                 const { error } = await supabaseClient.from('tickets').insert(ticketsToInsert);
                 if (error) throw error;
                 
-                alert(`تم دمج ورفع ${count} تذاكر بنجاح! ستبقى محفوظة دائماً ✨`); 
+                alert(`تم توليد وحفظ ${count} تذاكر لمناسبة (${eventName}) بنجاح! ✨`); 
                 loadExistingTickets(); 
             } catch (err) { 
                 alert("حدث خطأ أثناء المعالجة: " + err.message); 
             } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
+                btn.disabled = false; btn.innerText = originalText;
             }
         }
 
-        // دالة العرض من السيرفر مباشرة
         async function renderMergeTicketCard(gridTarget, ticket, indexNumber) {
             const card = document.createElement('div');
-            card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
+            card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
             
             const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`);
             const imageUrl = data.publicUrl;
@@ -459,22 +491,21 @@
                     <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">${ticket.code}</span>
                     <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-full font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
                 </div>
-                <div class="bg-gray-50 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center">
-                    <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Merged Ticket"/>
+                <!-- الخلفية المنقطة (المربعات) تظهر أن الباركود فعلاً مفرغ وشفاف -->
+                <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
+                    <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
                 </div>
             `;
             gridTarget.appendChild(card);
         }
 
-        // تحميل آمن للصور عند المشاركة
         async function shareSelectedTicketsGroup() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { alert("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌"); return; }
             const filesArray = [];
             
             const btn = document.querySelector('button[onclick="shareSelectedTicketsGroup()"]');
-            const originalText = btn.innerText;
-            btn.innerText = "جاري التجهيز... ⏳";
+            const originalText = btn.innerText; btn.innerText = "جاري التجهيز... ⏳";
             
             for (let i = 0; i < checkboxes.length; i++) {
                 const cb = checkboxes[i];
@@ -487,18 +518,14 @@
                     const response = await fetch(data.publicUrl);
                     const blob = await response.blob();
                     filesArray.push(new File([blob], `تذكرة_رقم_${ticketNumber}.png`, { type: 'image/png' }));
-                } catch (e) {
-                    console.error("فشل تحميل الصورة للمشاركة", e);
-                }
+                } catch (e) { console.error("فشل تحميل الصورة", e); }
             }
             
             btn.innerText = originalText;
 
             if (filesArray.length > 0 && navigator.canShare && navigator.canShare({ files: filesArray })) { 
                 await navigator.share({ files: filesArray, title: 'مشاركة التذاكر المحددة' }); 
-            } else { 
-                alert("المشاركة غير مدعومة على هذا المتصفح أو فشل جلب الصور."); 
-            }
+            } else { alert("المشاركة غير مدعومة أو فشل جلب الصور."); }
         }
 
         async function deleteSelectedTickets() {
@@ -519,30 +546,11 @@
         }
 
         function toggleSelectAll() {
-            allSelected = !allSelected;
-            document.querySelectorAll('input[name="ticketSelect"]').forEach(cb => cb.checked = allSelected);
+            let allSelected = false;
+            const checkboxes = document.querySelectorAll('input[name="ticketSelect"]');
+            for(let cb of checkboxes) { if(!cb.checked) { allSelected = true; break; } }
+            checkboxes.forEach(cb => cb.checked = allSelected);
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
-        }
-
-        async function clearAllTickets() {
-            if (confirm("🚨 تحذير! سيتم تصفير حسابك وحذف جميع تذاكرك وصورك. هل أنت متأكد؟")) {
-                try {
-                    const grid = document.getElementById('ticketsGrid');
-                    grid.innerHTML = '<p class="text-red-500 font-bold animate-pulse text-center">جاري التصفير...</p>';
-                    
-                    const { data: fileList } = await supabaseClient.storage.from('tickets').list(currentUser.id);
-                    if (fileList && fileList.length > 0) {
-                        const filesToDelete = fileList.map(f => `${currentUser.id}/${f.name}`);
-                        await supabaseClient.storage.from('tickets').remove(filesToDelete);
-                    }
-                    
-                    const { error } = await supabaseClient.from('tickets').delete().eq('user_id', currentUser.id);
-                    if (error) { alert("فشل الحذف الكامل: " + error.message); loadExistingTickets(); return; }
-                    
-                    alert("تم تصفير تذاكرك بالكامل بنجاح! 🧹");
-                    grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً.</p>';
-                } catch (err) { alert(err.message); }
-            }
         }
 
         async function verifyTicket(code) {
