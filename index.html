@@ -23,7 +23,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
 
-    <!-- شاشة تسجيل الدخول / إنشاء حساب -->
     <div id="authSection" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 hidden mt-10 border-t-4 border-purple-600">
         <div class="text-center">
             <h2 class="text-2xl font-bold text-gray-800">مرحباً بك 👋</h2>
@@ -45,7 +44,6 @@
         </div>
     </div>
 
-    <!-- لوحة التحكم الرئيسية -->
     <div id="mainContent" class="max-w-4xl mx-auto space-y-8 hidden">
         <div id="adminPanel" class="space-y-8">
             <header class="text-center bg-purple-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
@@ -113,7 +111,6 @@
         </div>
     </div>
 
-    <!-- شاشة الفحص -->
     <section id="scannerSection" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex-col justify-center items-center border-2 border-purple-400 mt-10">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
         <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4">
@@ -125,6 +122,7 @@
 
     <script>
         const SUPABASE_URL = "https://jzvoshwxmdhoxqaqvblx.supabase.co";
+        // تنبيه: تأكد أن المفتاح بالأسفل هو الـ anon public key المستخرج من إعدادات الـ API في المشروع
         const SUPABASE_KEY = "sb_publishable_lqf87dZLacAaZr3q9i63Mw_x9aTxA3R";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -132,21 +130,84 @@
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
 
+        // دالة إنشاء الحساب المحسنة والناعمة تماماً
         async function handleSignup() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
+            const btn = document.querySelector('button[onclick="handleSignup()"]');
+            const originalText = btn.innerText;
+
             if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert("خطأ: " + error.message);
-            else if (data.user) alert("تم إنشاء الحساب بنجاح! جاري الدخول...");
+
+            btn.innerText = "جاري التجهيز... ⏳";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                
+                if (error) {
+                    alert("خطأ: " + error.message);
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else if (data.user && !data.session) {
+                    alert("تم إنشاء الحساب! الرجاء مراجعة بريدك الإلكتروني لتفعيله أولاً إذا كان خيار التفعيل نشطاً.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else if (data.user && data.session) {
+                    btn.innerText = "✅ تم الدخول!";
+                    btn.classList.replace('bg-gray-100', 'bg-green-500');
+                    btn.classList.replace('text-gray-800', 'text-white');
+                    
+                    setTimeout(() => {
+                        updateAuthState(data.session);
+                    }, 500);
+                }
+            } catch (err) {
+                alert("حدث خطأ في الاتصال بالسيرفر.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
 
+        // دالة تسجيل الدخول المحسنة والناعمة
         async function handleLogin() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
+            const btn = document.querySelector('button[onclick="handleLogin()"]');
+            const originalText = btn.innerText;
+
             if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("خطأ في تسجيل الدخول، تأكد من البيانات.");
+
+            btn.innerText = "جاري الدخول... ⏳";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                
+                if (error) {
+                    alert("خطأ في تسجيل الدخول، تأكد من البيانات.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else if (data.session) {
+                    btn.innerText = "✅ مرحباً بك!";
+                    btn.classList.replace('bg-purple-600', 'bg-green-500');
+                    
+                    setTimeout(() => {
+                        updateAuthState(data.session);
+                    }, 500);
+                }
+            } catch (err) {
+                alert("حدث خطأ في الاتصال بالسيرفر.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
 
         async function handleLogout() {
@@ -289,12 +350,20 @@
 
         canvasWrapper.addEventListener('touchend', function(e) { if (e.touches.length < 2) { initialPinchDist = null; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
+        // دالة جلب التذاكر المعدلة لفلترة البيانات وعزلها لكل مستخدم
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
                 const grid = document.getElementById('ticketsGrid');
                 grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
-                const { data, error } = await supabaseClient.from('tickets').select('*').order('created_at', { ascending: true });
+                
+                // التعديل الأمني هنا لتصفية التذاكر بحسب المستخدم الحالي
+                const { data, error } = await supabaseClient
+                    .from('tickets')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: true });
+                    
                 if (error) { grid.innerHTML = '<p class="col-span-full text-red-500 text-center">فشل تحميل التذاكر</p>'; return; }
                 grid.innerHTML = '';
                 if(data.length === 0) { grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
@@ -394,12 +463,19 @@
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
         }
 
+        // دالة تصفير النظام المحسنة لحذف تذاكر المستخدم الحالي فقط
         async function clearAllTickets() {
-            if (confirm("🚨 تحذير! سيتم تصفير السيرفر وحذف جميع تذاكرك. هل أنت متأكد؟")) {
+            if (confirm("🚨 تحذير! سيتم تصفير حسابك وحذف جميع تذاكرك أنت فقط. هل أنت متأكد؟")) {
                 try {
                     const grid = document.getElementById('ticketsGrid');
                     grid.innerHTML = '<p class="text-red-500 font-bold animate-pulse text-center">جاري التصفير...</p>';
-                    const { error } = await supabaseClient.from('tickets').delete().not('code', 'is', null);
+                    
+                    // التعديل الأمني هنا لمنع حذف بيانات الآخرين
+                    const { error } = await supabaseClient
+                        .from('tickets')
+                        .delete()
+                        .eq('user_id', currentUser.id);
+                        
                     if (error) { alert("فشل الحذف الكامل: " + error.message); loadExistingTickets(); return; }
                     alert("تم تصفير تذاكرك بالكامل بنجاح! 🧹");
                     grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً.</p>';
