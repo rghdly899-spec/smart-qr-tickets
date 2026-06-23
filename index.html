@@ -125,7 +125,6 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">📤 مشاركة وحفظ للألبوم</button>
                         <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف المحددة</button>
-                        <!-- تم إزالة زر التصفير بالكامل -->
                     </div>
                 </div>
                 
@@ -366,7 +365,7 @@
             } catch (err) { console.error(err); }
         }
 
-        // دالة تحويل التصميم إلى ملف ليتم رفعه (الباركود أصبح مفرغ/شفاف تماماً)
+        // دالة تحويل التصميم إلى ملف ليتم رفعه (الباركود مفرغ/شفاف تماماً)
         function generateTicketBlob(code, indexNumber) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -375,7 +374,7 @@
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: 400, height: 400, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", // الباركود هنا مفرغ/شفاف
+                    colorLight: "rgba(0,0,0,0)", 
                     correctLevel: QRCode.CorrectLevel.L 
                 });
                 
@@ -408,7 +407,7 @@
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: qrSize, height: qrSize, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", // مفرغ تماماً
+                    colorLight: "rgba(0,0,0,0)", 
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
@@ -418,7 +417,6 @@
                     const extraHeight = Math.max(30, Math.floor(qrSize * 0.2));
                     
                     canvas.width = qrSize; canvas.height = qrSize + extraHeight;
-                    // لا نضيف خلفية هنا لتظل مفرغة، نرسم الباركود مباشرة
                     ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
                     
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
@@ -431,7 +429,7 @@
             });
         }
 
-        // دالة التوليد والرفع للسحابة (تشمل الدعوات والأكواد المفرغة وتحفظ اسم المناسبة)
+        // دالة التوليد والرفع للسحابة
         async function processTickets() {
             const mode = document.querySelector('input[name="ticketMode"]:checked').value;
             const eventName = document.getElementById('eventNameInput').value.trim() || 'عام (بدون مجلد)';
@@ -462,7 +460,6 @@
                         
                     if (uploadError) throw uploadError;
                     
-                    // إضافة event_name لحفظ التذكرة تحت المجلد المناسب
                     ticketsToInsert.push({ code: code, is_used: false, user_id: currentUser.id, event_name: eventName });
                 }
                 
@@ -478,6 +475,27 @@
             }
         }
 
+        // إعادة تفعيل التذكرة
+        async function reactivateTicket(ticketId, ticketCode) {
+            if (confirm(`هل أنت متأكد من إعادة تفعيل التذكرة (${ticketCode})؟`)) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('tickets')
+                        .update({ is_used: false, scanned_at: null })
+                        .eq('id', ticketId);
+
+                    if (error) {
+                        alert("فشل إعادة التفعيل: " + error.message);
+                        return;
+                    }
+                    alert("تم إعادة التفعيل بنجاح! ✅");
+                    loadExistingTickets();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        }
+
         async function renderMergeTicketCard(gridTarget, ticket, indexNumber) {
             const card = document.createElement('div');
             card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
@@ -485,16 +503,21 @@
             const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`);
             const imageUrl = data.publicUrl;
 
+            // زر إعادة التفعيل يظهر فقط إذا التذكرة مستخدمة
+            const reactivateBtnHtml = ticket.is_used ? 
+                `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : 
+                '';
+
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10">
                 <div class="flex items-center justify-between w-full px-1 pt-2">
                     <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">${ticket.code}</span>
                     <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-full font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
                 </div>
-                <!-- الخلفية المنقطة (المربعات) تظهر أن الباركود فعلاً مفرغ وشفاف -->
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
                     <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
                 </div>
+                ${reactivateBtnHtml}
             `;
             gridTarget.appendChild(card);
         }
@@ -563,7 +586,18 @@
                     await supabaseClient.from('tickets').update({ is_used: true, scanned_at: new Date().toISOString() }).eq('code', code);
                     resultScreen.innerHTML = `<div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl">✅ تذكرة صالحة ومؤكدة 👍</div>`;
                 } else {
-                    resultScreen.innerHTML = `<div class="bg-red-100 border-4 border-red-500 text-red-900 p-8 rounded-2xl text-lg font-bold">❌ مستخدمة بوقت: ${new Date(data.scanned_at).toLocaleTimeString('ar-SA')}</div>`;
+                    const formattedDateTime = new Date(data.scanned_at).toLocaleString('ar-SA', {
+                        dateStyle: 'long',
+                        timeStyle: 'short'
+                    });
+                    resultScreen.innerHTML = `
+                        <div class="bg-red-100 border-4 border-red-500 text-red-900 p-6 rounded-2xl text-lg font-bold space-y-2">
+                            <div>❌ تذكرة مستخدمة مسبقاً!</div>
+                            <div class="text-sm font-normal text-gray-700 border-t border-red-200 pt-2 mt-2 font-mono">
+                                📅 ${formattedDateTime}
+                            </div>
+                        </div>
+                    `;
                 }
             } catch (err) { alert(err.message); }
         }
