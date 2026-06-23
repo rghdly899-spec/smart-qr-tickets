@@ -12,64 +12,47 @@
         body { font-family: 'Tajawal', sans-serif; }
         
         input[type="checkbox"] { cursor: pointer; accent-color: #7e22ce; }
-
-        /* منطقة الكانفاس تمنع تحديث الصفحة عند السحب بالجوال */
         #canvasWrapper { touch-action: none; }
-
-        /* تنسيق خريطة الدمج التفاعلية */
-        #invitationCanvas {
-            max-width: 100%;
-            cursor: crosshair;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        /* مربع التحديد الأحمر */
-        #selectionMarker {
-            position: absolute;
-            border: 2px dashed #ff4040;
-            background-color: rgba(255, 64, 64, 0.2);
-            border-radius: 8px;
-            display: none;
-            pointer-events: none; /* يسمح بالضغط على الكانفاس تحته */
-            transition: all 0.2s ease-out;
-            z-index: 5;
-        }
-
-        /* مقبض تغيير الحجم (الدائرة الحمراء في الزاوية) */
-        #resizeHandle {
-            position: absolute;
-            bottom: -10px;
-            left: -10px;
-            width: 24px;
-            height: 24px;
-            background-color: #ff4040;
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: sw-resize;
-            pointer-events: auto; /* مهم لتفعيل السحب عليه */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        /* تنسيق زر اختيار اللون */
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            border-radius: 8px;
-            padding: 0;
-            overflow: hidden;
-        }
+        #invitationCanvas { max-width: 100%; cursor: crosshair; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #selectionMarker { position: absolute; border: 2px dashed #ff4040; background-color: rgba(255, 64, 64, 0.2); border-radius: 8px; display: none; pointer-events: none; transition: all 0.2s ease-out; z-index: 5; }
+        #resizeHandle { position: absolute; bottom: -10px; left: -10px; width: 24px; height: 24px; background-color: #ff4040; border: 3px solid white; border-radius: 50%; cursor: sw-resize; pointer-events: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        input[type="color"] { -webkit-appearance: none; border: none; border-radius: 8px; padding: 0; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
 
-    <div class="max-w-4xl mx-auto space-y-8">
-        
+    <!-- شاشة تسجيل الدخول / إنشاء حساب -->
+    <div id="authSection" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 hidden mt-10 border-t-4 border-purple-600">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-800">مرحباً بك 👋</h2>
+            <p class="text-gray-500 text-sm mt-1">سجل دخولك أو أنشئ حساباً جديداً لإدارة تذاكرك</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">البريد الإلكتروني</label>
+                <input type="email" id="emailInput" class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="example@email.com" dir="ltr">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">كلمة المرور</label>
+                <input type="password" id="passwordInput" class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="******" dir="ltr">
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button onclick="handleLogin()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-sm">تسجيل دخول</button>
+                <button onclick="handleSignup()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition shadow-sm border border-gray-200">حساب جديد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم الرئيسية -->
+    <div id="mainContent" class="max-w-4xl mx-auto space-y-8 hidden">
         <div id="adminPanel" class="space-y-8">
-            <header class="text-center bg-purple-700 text-white p-6 rounded-2xl shadow-lg">
-                <h1 class="text-3xl font-bold">🎟️ Smart QR Generator</h1>
+            <header class="text-center bg-purple-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
+                <button onclick="handleLogout()" class="absolute top-4 left-4 md:top-6 md:left-6 bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 md:px-4 md:py-2 rounded-xl transition shadow flex items-center gap-1 z-10">
+                    تسجيل خروج 🚪
+                </button>
+                <h1 class="text-2xl md:text-3xl font-bold mt-8 md:mt-0 relative z-10">🎟️ Smart QR Generator</h1>
             </header>
 
             <section class="bg-white p-6 rounded-2xl shadow-md space-y-5">
@@ -80,10 +63,9 @@
                         <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والترقيم:</label>
                         <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm">
                     </div>
-
                     <div class="flex items-center gap-3">
                         <label class="text-gray-700 font-semibold text-sm">📏 حجم الباركود:</label>
-                        <input type="number" id="qrSizeInput" value="250" min="50" max="1000" step="10" class="border rounded-xl px-3 py-2 w-24 text-center focus:outline-none focus:border-purple-500 font-bold">
+                        <input type="number" id="qrSizeInput" value="250" min="50" max="1000" step="10" class="border rounded-xl px-3 py-2 w-24 text-center focus:outline-none focus:border-purple-500 font-bold bg-white">
                         <span class="text-xs text-gray-500">بكسل</span>
                     </div>
                 </div>
@@ -93,14 +75,11 @@
                         <label class="text-gray-700 font-semibold text-sm">تحميل تصميم الدعوة (PNG/JPG):</label>
                         <input type="file" id="inviteUpload" accept="image/*" class="text-xs text-gray-500 bg-white p-1 rounded-xl border">
                     </div>
-                    
                     <div class="relative inline-block mt-2 w-full" id="canvasContainer">
                         <p id="mapInstruction" class="text-xs text-purple-600 mb-2 font-bold hidden animate-pulse">💡 ممتاز! اسحب بإصبعك لتحديد المكان، وكبّر أو صغّر من النقطة الحمراء أو بإصبعين</p>
                         <div class="relative inline-block" id="canvasWrapper">
                             <canvas id="invitationCanvas" class="hidden"></canvas>
-                            <div id="selectionMarker">
-                                <div id="resizeHandle"></div>
-                            </div>
+                            <div id="selectionMarker"><div id="resizeHandle"></div></div>
                         </div>
                     </div>
                 </div>
@@ -110,7 +89,6 @@
                         <label class="text-gray-700 font-semibold text-sm">عدد التذاكر للدمج:</label>
                         <input type="number" id="ticketCount" value="5" min="1" max="100" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50">
                     </div>
-
                     <button onclick="processTicketsWithImage()" id="processBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow flex items-center gap-2" disabled>
                         ⚡ دمج وتوليد التذاكر الجاهزة
                     </button>
@@ -118,23 +96,12 @@
                 
                 <div class="flex flex-wrap gap-3 justify-between items-center pt-2">
                     <div class="flex items-center gap-2">
-                        <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2.5 rounded-xl transition border shadow-sm">
-                            تحديد الكل
-                        </button>
+                        <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2.5 rounded-xl transition border shadow-sm">تحديد الكل</button>
                     </div>
-                    
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">
-                            📤 مشاركة المحددة دفعة واحدة للألبوم
-                        </button>
-                        
-                        <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">
-                            🗑️ حذف المحددة
-                        </button>
-                        
-                        <button onclick="clearAllTickets()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">
-                            🚨 تصفير النظام
-                        </button>
+                        <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">📤 مشاركة المحددة للألبوم</button>
+                        <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف المحددة</button>
+                        <button onclick="clearAllTickets()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🚨 تصفير النظام</button>
                     </div>
                 </div>
                 
@@ -144,14 +111,15 @@
                 </div>
             </section>
         </div>
-
-        <section id="scannerSection" class="bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex flex-col justify-center items-center border-2 border-purple-400">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
-            <div id="resultScreen" class="w-full max-w-md bg-gray-50 border p-8 rounded-2xl text-center space-y-4">
-                <p class="text-gray-400 text-lg animate-pulse">جاري التحقق من حالة التذكرة...</p>
-            </div>
-        </section>
     </div>
+
+    <!-- شاشة الفحص -->
+    <section id="scannerSection" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex-col justify-center items-center border-2 border-purple-400 mt-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
+        <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4">
+            <p class="text-gray-400 text-lg animate-pulse">جاري التحقق من حالة التذكرة...</p>
+        </div>
+    </section>
 
     <div id="tempQr" class="hidden"></div>
 
@@ -160,12 +128,46 @@
         const SUPABASE_KEY = "sb_publishable_lqf87dZLacAaZr3q9i63Mw_x9aTxA3R";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let originalInviteImage = null;
-        let rawImageX = 0; 
-        let rawImageY = 0;
-        let selectedX = 0;
-        let selectedY = 0;
-        let selectionWidth = 250; 
+        let originalInviteImage = null; let rawImageX = 0; let rawImageY = 0;
+        let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
+        let currentUser = null; 
+
+        async function handleSignup() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) alert("خطأ: " + error.message);
+            else if (data.user) alert("تم إنشاء الحساب بنجاح! جاري الدخول...");
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) alert("خطأ في تسجيل الدخول، تأكد من البيانات.");
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.reload();
+        }
+
+        function updateAuthState(session) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('code')) return;
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                loadExistingTickets();
+            } else {
+                currentUser = null;
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
+            }
+        }
 
         function convertToArabicNumbers(num) {
             const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -175,7 +177,6 @@
         document.getElementById('inviteUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
@@ -183,39 +184,28 @@
                     originalInviteImage = img;
                     const canvas = document.getElementById('invitationCanvas');
                     const ctx = canvas.getContext('2d');
-                    
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+                    canvas.width = img.width; canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
-
                     canvas.classList.remove('hidden');
                     document.getElementById('mapInstruction').classList.remove('hidden');
                     document.getElementById('processBtn').disabled = false;
                     document.getElementById('selectionMarker').style.display = 'none'; 
-                    
-                    rawImageX = 0;
-                    rawImageY = 0;
+                    rawImageX = 0; rawImageY = 0;
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        // دالة تحديث مكان وحجم المربع الأحمر
         function updateMarkerDisplay(rect, scaleX, scaleY) {
             if (rawImageX === 0 && rawImageY === 0) return;
-
             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-            
             selectedX = rawImageX - (selectionWidth / 2);
             selectedY = rawImageY - (selectionWidth / 2);
-
             const marker = document.getElementById('selectionMarker');
             marker.style.display = 'block';
-            
             const displayWidth = selectionWidth / scaleX;
             const displayHeight = (selectionWidth + (selectionWidth * 0.25)) / scaleY;
-
             marker.style.left = (selectedX / scaleX) + 'px';
             marker.style.top = (selectedY / scaleY) + 'px';
             marker.style.width = displayWidth + 'px';
@@ -226,88 +216,38 @@
             const canvas = document.getElementById('invitationCanvas');
             if (document.getElementById('selectionMarker').style.display === 'block') {
                 const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                updateMarkerDisplay(rect, scaleX, scaleY);
+                updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
             }
         });
-
-        // ==========================================
-        // بداية كود التفاعل الجديد (التحريك وتغيير الحجم باللمس/الماوس)
-        // ==========================================
         
-        let isDraggingMarker = false;
-        let isResizingMarker = false;
-        let resizeStartX = 0;
-        let resizeStartSize = 0;
-        let initialPinchDist = null;
-        let initialSizePinch = null;
-
+        let isDraggingMarker = false; let isResizingMarker = false;
+        let resizeStartX = 0; let resizeStartSize = 0;
+        let initialPinchDist = null; let initialSizePinch = null;
         const canvas = document.getElementById('invitationCanvas');
         const canvasWrapper = document.getElementById('canvasWrapper');
         const selectionMarker = document.getElementById('selectionMarker');
         const resizeHandle = document.getElementById('resizeHandle');
         const qrSizeInput = document.getElementById('qrSizeInput');
 
-        // 1. وظيفة تحريك الباركود (بالسحب)
         function moveMarker(e) {
             if (!originalInviteImage) return;
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            rawImageX = (clientX - rect.left) * scaleX;
-            rawImageY = (clientY - rect.top) * scaleY;
-
-            updateMarkerDisplay(rect, scaleX, scaleY);
+            rawImageX = (clientX - rect.left) * (canvas.width / rect.width);
+            rawImageY = (clientY - rect.top) * (canvas.height / rect.height);
+            updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (isResizingMarker) return;
-            isDraggingMarker = true;
-            selectionMarker.style.transition = 'none'; // لإزالة التأخير أثناء السحب
-            moveMarker(e);
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (isDraggingMarker) moveMarker(e);
-        });
-        window.addEventListener('mouseup', () => {
-            if (isDraggingMarker) {
-                isDraggingMarker = false;
-                selectionMarker.style.transition = 'all 0.2s ease-out'; // إعادة نعومة الحركة
-            }
-        });
+        canvas.addEventListener('mousedown', (e) => { if (isResizingMarker) return; isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); });
+        window.addEventListener('mousemove', (e) => { if (isDraggingMarker) moveMarker(e); });
+        window.addEventListener('mouseup', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
+        canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1 && !isResizingMarker) { isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); } }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { if (isDraggingMarker && e.touches.length === 1) { e.preventDefault(); moveMarker(e); } }, {passive: false});
+        window.addEventListener('touchend', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
-        canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1 && !isResizingMarker) {
-                isDraggingMarker = true;
-                selectionMarker.style.transition = 'none';
-                moveMarker(e);
-            }
-        }, {passive: false});
-        
-        canvas.addEventListener('touchmove', (e) => {
-            if (isDraggingMarker && e.touches.length === 1) {
-                e.preventDefault(); // يمنع الصفحة من النزول والطلوع أثناء تحريك الباركود
-                moveMarker(e);
-            }
-        }, {passive: false});
-        
-        window.addEventListener('touchend', () => {
-            if (isDraggingMarker) {
-                isDraggingMarker = false;
-                selectionMarker.style.transition = 'all 0.2s ease-out';
-            }
-        });
-
-        // 2. وظيفة تغيير الحجم باستخدام النقطة الحمراء
         function startResize(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            isResizingMarker = true;
+            e.preventDefault(); e.stopPropagation(); isResizingMarker = true;
             resizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
             resizeStartSize = parseInt(qrSizeInput.value);
             selectionMarker.style.transition = 'none';
@@ -316,133 +256,70 @@
         function doResize(e) {
             if (!isResizingMarker) return;
             e.preventDefault();
-            
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const dx = resizeStartX - clientX; // سحب لليسار يكبّر الحجم
-            
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            
-            let newSize = resizeStartSize + (dx * scaleX * 2);
-
-            if (newSize < 50) newSize = 50;
-            if (newSize > 1000) newSize = 1000;
-
+            let newSize = resizeStartSize + ((resizeStartX - clientX) * (canvas.width / rect.width) * 2);
+            if (newSize < 50) newSize = 50; if (newSize > 1000) newSize = 1000;
             qrSizeInput.value = Math.round(newSize);
-
-            const scaleY = canvas.height / rect.height;
-            updateMarkerDisplay(rect, scaleX, scaleY);
+            updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
         }
 
-        function stopResize() {
-            if (isResizingMarker) {
-                isResizingMarker = false;
-                selectionMarker.style.transition = 'all 0.2s ease-out';
-            }
-        }
+        function stopResize() { if (isResizingMarker) { isResizingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } }
+        resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
+        resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
 
-        resizeHandle.addEventListener('mousedown', startResize);
-        window.addEventListener('mousemove', doResize);
-        window.addEventListener('mouseup', stopResize);
-
-        resizeHandle.addEventListener('touchstart', startResize, {passive: false});
-        window.addEventListener('touchmove', doResize, {passive: false});
-        window.addEventListener('touchend', stopResize);
-
-        // 3. وظيفة التكبير والتصغير بإصبعين (Pinch to Zoom)
         canvasWrapper.addEventListener('touchstart', function(e) {
             if (e.touches.length === 2 && selectionMarker.style.display === 'block') {
-                e.preventDefault();
-                isDraggingMarker = false; 
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                initialPinchDist = Math.hypot(dx, dy);
-                initialSizePinch = parseInt(qrSizeInput.value);
-                selectionMarker.style.transition = 'none';
+                e.preventDefault(); isDraggingMarker = false; 
+                initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialSizePinch = parseInt(qrSizeInput.value); selectionMarker.style.transition = 'none';
             }
         }, {passive: false});
 
         canvasWrapper.addEventListener('touchmove', function(e) {
             if (e.touches.length === 2 && initialPinchDist !== null) {
                 e.preventDefault();
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                const currentDist = Math.hypot(dx, dy);
-                
-                const scale = currentDist / initialPinchDist;
-                let newSize = initialSizePinch * scale;
-                
-                if (newSize < 50) newSize = 50;
-                if (newSize > 1000) newSize = 1000;
-                
+                let newSize = initialSizePinch * (Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY) / initialPinchDist);
+                if (newSize < 50) newSize = 50; if (newSize > 1000) newSize = 1000;
                 qrSizeInput.value = Math.round(newSize);
-                
                 const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                updateMarkerDisplay(rect, scaleX, scaleY);
+                updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
             }
         }, {passive: false});
 
-        canvasWrapper.addEventListener('touchend', function(e) {
-            if (e.touches.length < 2) {
-                initialPinchDist = null;
-                selectionMarker.style.transition = 'all 0.2s ease-out';
-            }
-        });
-        
-        // ==========================================
-        // نهاية كود التفاعل
-        // ==========================================
+        canvasWrapper.addEventListener('touchend', function(e) { if (e.touches.length < 2) { initialPinchDist = null; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
         async function loadExistingTickets() {
+            if (!currentUser) return; 
             try {
                 const grid = document.getElementById('ticketsGrid');
                 grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
                 const { data, error } = await supabaseClient.from('tickets').select('*').order('created_at', { ascending: true });
                 if (error) { grid.innerHTML = '<p class="col-span-full text-red-500 text-center">فشل تحميل التذاكر</p>'; return; }
-                
                 grid.innerHTML = '';
-                if(data.length === 0) { grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً.</p>'; return; }
-                
+                if(data.length === 0) { grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
                 const batchMap = new Map();
-                data.forEach(ticket => {
-                    if (!batchMap.has(ticket.created_at)) { batchMap.set(ticket.created_at, []); }
-                    batchMap.get(ticket.created_at).push(ticket);
-                });
-
-                for (const [batchKey, batchTickets] of batchMap) {
-                    for (let i = 0; i < batchTickets.length; i++) {
-                        await renderMergeTicketCard(grid, batchTickets[i], i + 1);
-                    }
-                }
+                data.forEach(ticket => { if (!batchMap.has(ticket.created_at)) { batchMap.set(ticket.created_at, []); } batchMap.get(ticket.created_at).push(ticket); });
+                for (const [batchKey, batchTickets] of batchMap) { for (let i = 0; i < batchTickets.length; i++) { await renderMergeTicketCard(grid, batchTickets[i], i + 1); } }
             } catch (err) { console.error(err); }
         }
 
         async function processTicketsWithImage() {
             if (!originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
-            if (document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغطي على الصورة لاختيار مكان الباركود أولاً!"); return; }
-
+            if (document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
+            if (!currentUser) { alert("الرجاء تسجيل الدخول أولاً!"); return; }
             try {
-                const count = document.getElementById('ticketCount').value;
-                const ticketsToInsert = [];
-                for (let i = 0; i < count; i++) {
-                    const uniqueCode = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-                    ticketsToInsert.push({ code: uniqueCode, is_used: false });
-                }
-
-                const { data, error } = await supabaseClient.from('tickets').insert(ticketsToInsert).select();
+                const count = document.getElementById('ticketCount').value; const ticketsToInsert = [];
+                for (let i = 0; i < count; i++) { ticketsToInsert.push({ code: 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase(), is_used: false, user_id: currentUser.id }); }
+                const { error } = await supabaseClient.from('tickets').insert(ticketsToInsert);
                 if (error) { alert('خطأ في الحفظ: ' + error.message); return; }
-
-                alert(`تم دمج ${count} تذاكر جديدة فوق تصميمكِ بنجاح! ✨`);
-                loadExistingTickets(); 
+                alert(`تم دمج ${count} تذاكر جديدة فوق تصميمك بنجاح! ✨`); loadExistingTickets(); 
             } catch (err) { alert(err.message); }
         }
 
         async function renderMergeTicketCard(gridTarget, ticket, indexNumber) {
             const card = document.createElement('div');
             card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
-            
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10">
                 <div class="flex items-center justify-between w-full px-1 pt-2">
@@ -454,133 +331,77 @@
                 </div>
             `;
             gridTarget.appendChild(card);
-
-            const currentUrl = window.location.href.split('?')[0];
-            const verifyUrl = `${currentUrl}?code=${ticket.code}`;
-            const tempQrDiv = document.getElementById('tempQr');
-            tempQrDiv.innerHTML = '';
-            
-            const selectedColor = document.getElementById('qrColorPicker').value;
-
-            new QRCode(tempQrDiv, { 
-                text: verifyUrl, 
-                width: 400, 
-                height: 400,
-                colorDark: selectedColor, 
-                colorLight: "rgba(0,0,0,0)", 
-                correctLevel: QRCode.CorrectLevel.L
-            });
-
+            const verifyUrl = `${window.location.href.split('?')[0]}?code=${ticket.code}`;
+            const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
+            new QRCode(tempQrDiv, { text: verifyUrl, width: 400, height: 400, colorDark: document.getElementById('qrColorPicker').value, colorLight: "rgba(0,0,0,0)", correctLevel: QRCode.CorrectLevel.L });
             await new Promise(resolve => setTimeout(resolve, 50));
             const qrImg = tempQrDiv.querySelector('img');
-            
             if (qrImg) {
-                if (originalInviteImage && document.getElementById('selectionMarker').style.display !== 'none') {
-                    createMergedTicketImage(qrImg.src, indexNumber, ticket.code);
-                } else {
-                    const finalImgElement = document.getElementById(`combined-img-${ticket.code}`);
-                    if (finalImgElement) finalImgElement.src = qrImg.src;
-                }
+                if (originalInviteImage && document.getElementById('selectionMarker').style.display !== 'none') { createMergedTicketImage(qrImg.src, indexNumber, ticket.code); } 
+                else { const finalImgElement = document.getElementById(`combined-img-${ticket.code}`); if (finalImgElement) finalImgElement.src = qrImg.src; }
             }
         }
 
         function createMergedTicketImage(qrBase64, number, ticketCode) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = originalInviteImage.width;
-            canvas.height = originalInviteImage.height;
-            
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
             ctx.drawImage(originalInviteImage, 0, 0);
-            
-            const img = new Image();
-            img.src = qrBase64;
+            const img = new Image(); img.src = qrBase64;
             img.onload = function() {
                 selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-
                 ctx.drawImage(img, selectedX, selectedY, selectionWidth, selectionWidth);
-                
-                const arabicNumber = convertToArabicNumbers(number);
-                const selectedColor = document.getElementById('qrColorPicker').value;
-                
-                const dynamicFontSize = Math.max(18, Math.floor(selectionWidth * 0.15));
-                
-                ctx.fillStyle = selectedColor;
-                ctx.font = `bold ${dynamicFontSize}px "Tajawal", sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                
-                const textSpacing = Math.max(5, Math.floor(selectionWidth * 0.05));
-                ctx.fillText(arabicNumber, selectedX + (selectionWidth / 2), selectedY + selectionWidth + textSpacing);
-                
+                ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                ctx.fillText(convertToArabicNumbers(number), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                 const finalImgElement = document.getElementById(`combined-img-${ticketCode}`);
-                if (finalImgElement) {
-                    finalImgElement.src = canvas.toDataURL('image/png');
-                }
+                if (finalImgElement) { finalImgElement.src = canvas.toDataURL('image/png'); }
             };
         }
 
         async function shareSelectedTicketsGroup() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { alert("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌"); return; }
-            
             const filesArray = [];
             for (let i = 0; i < checkboxes.length; i++) {
-                const cb = checkboxes[i];
-                const ticketCode = cb.dataset.ticketCode;
-                const ticketNumber = cb.dataset.ticketNumber;
-                const imgElement = document.getElementById(`combined-img-${ticketCode}`);
-                
+                const cb = checkboxes[i]; const imgElement = document.getElementById(`combined-img-${cb.dataset.ticketCode}`);
                 if (imgElement && imgElement.src && imgElement.src.startsWith('data:image')) {
-                    const response = await fetch(imgElement.src);
-                    const blob = await response.blob();
-                    const file = new File([blob], `تذكرة_رقم_${ticketNumber}.png`, { type: 'image/png' });
-                    filesArray.push(file);
+                    const blob = await (await fetch(imgElement.src)).blob();
+                    filesArray.push(new File([blob], `تذكرة_رقم_${cb.dataset.ticketNumber}.png`, { type: 'image/png' }));
                 }
             }
-
-            if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-                await navigator.share({
-                    files: filesArray,
-                    title: 'مشاركة التذاكر المحددة'
-                });
-            } else {
-                alert("المشاركة غير مدعومة على هذا المتصفح.");
-            }
+            if (navigator.canShare && navigator.canShare({ files: filesArray })) { await navigator.share({ files: filesArray, title: 'مشاركة التذاكر المحددة' }); } 
+            else { alert("المشاركة غير مدعومة على هذا المتصفح."); }
         }
 
         async function deleteSelectedTickets() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { alert("الرجاء تحديد تذكرة لحذفها! ❌"); return; }
-
-            if (confirm(`هل أنتِ متأكدة من حذف الـ (${checkboxes.length}) تذاكر المحددة؟`)) {
+            if (confirm(`هل أنت متأكد من حذف الـ (${checkboxes.length}) تذاكر المحددة؟`)) {
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
                     const { error } = await supabaseClient.from('tickets').delete().in('id', idsToDelete);
                     if (error) { alert("فشل الحذف: " + error.message); return; }
-                    alert("تم الحذف بنجاح! 🗑️");
-                    loadExistingTickets();
+                    alert("تم الحذف بنجاح! 🗑️"); loadExistingTickets();
                 } catch (err) { alert(err.message); }
             }
         }
 
         let allSelected = false;
         function toggleSelectAll() {
-            const checkboxes = document.querySelectorAll('input[name="ticketSelect"]');
             allSelected = !allSelected;
-            checkboxes.forEach(cb => cb.checked = allSelected);
+            document.querySelectorAll('input[name="ticketSelect"]').forEach(cb => cb.checked = allSelected);
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
         }
 
         async function clearAllTickets() {
-            if (confirm("🚨 تحذير! سيتم تصفير السيرفر. هل أنتِ متأكدة؟")) {
+            if (confirm("🚨 تحذير! سيتم تصفير السيرفر وحذف جميع تذاكرك. هل أنت متأكد؟")) {
                 try {
                     const grid = document.getElementById('ticketsGrid');
                     grid.innerHTML = '<p class="text-red-500 font-bold animate-pulse text-center">جاري التصفير...</p>';
                     const { error } = await supabaseClient.from('tickets').delete().not('code', 'is', null);
-
                     if (error) { alert("فشل الحذف الكامل: " + error.message); loadExistingTickets(); return; }
-
-                    alert("تم تصفير النظام بالكامل بنجاح! 🧹");
+                    alert("تم تصفير تذاكرك بالكامل بنجاح! 🧹");
                     grid.innerHTML = '<p class="col-span-full text-gray-400 text-center py-4">لا توجد تذاكر حالياً.</p>';
                 } catch (err) { alert(err.message); }
             }
@@ -591,34 +412,28 @@
                 const resultScreen = document.getElementById('resultScreen');
                 resultScreen.innerHTML = '<p class="text-purple-600 animate-pulse font-bold">جاري الفحص...</p>';
                 const { data, error } = await supabaseClient.from('tickets').select('*').eq('code', code).single();
-
-                if (error || !data) {
-                    resultScreen.innerHTML = `<div class="bg-yellow-100 border-4 border-yellow-500 text-yellow-800 p-8 rounded-2xl font-bold text-xl">⚠️ كود غير مسجل بالنظام!</div>`;
-                    return;
-                }
-
+                if (error || !data) { resultScreen.innerHTML = `<div class="bg-yellow-100 border-4 border-yellow-500 text-yellow-800 p-8 rounded-2xl font-bold text-xl">⚠️ كود غير مسجل بالنظام!</div>`; return; }
                 if (data.is_used === false) {
-                    const now = new Date();
-                    await supabaseClient.from('tickets').update({ is_used: true, scanned_at: now.toISOString() }).eq('code', code);
+                    await supabaseClient.from('tickets').update({ is_used: true, scanned_at: new Date().toISOString() }).eq('code', code);
                     resultScreen.innerHTML = `<div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl">✅ تذكرة صالحة ومؤكدة 👍</div>`;
                 } else {
-                    const formattedTime = new Date(data.scanned_at).toLocaleTimeString('ar-SA');
-                    resultScreen.innerHTML = `<div class="bg-red-100 border-4 border-red-500 text-red-900 p-8 rounded-2xl text-lg font-bold">❌ مستخدمة بوقت: ${formattedTime}</div>`;
+                    resultScreen.innerHTML = `<div class="bg-red-100 border-4 border-red-500 text-red-900 p-8 rounded-2xl text-lg font-bold">❌ مستخدمة بوقت: ${new Date(data.scanned_at).toLocaleTimeString('ar-SA')}</div>`;
                 }
             } catch (err) { alert(err.message); }
         }
 
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const codeParam = urlParams.get('code');
+        window.onload = async function() {
+            const codeParam = new URLSearchParams(window.location.search).get('code');
             if (codeParam) {
-                document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
                 document.getElementById('scannerSection').classList.remove('hidden');
                 verifyTicket(codeParam);
             } else {
-                document.getElementById('adminPanel').classList.remove('hidden');
                 document.getElementById('scannerSection').classList.add('hidden');
-                loadExistingTickets();
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                updateAuthState(session);
+                supabaseClient.auth.onAuthStateChange((_event, session) => { updateAuthState(session); });
             }
         }
     </script>
