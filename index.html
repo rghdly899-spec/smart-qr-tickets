@@ -432,7 +432,7 @@
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
             const companionsPos = document.getElementById('companionsPos').value;
             
-            const realFontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
+            const realFontSize = Math.max(14, Math.floor(selectionWidth * 0.11));
             const displayFontSize = realFontSize / scaleX;
 
             const topTextEl = document.getElementById('previewTopText');
@@ -630,7 +630,7 @@
                         ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
                         
                         ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                        const fontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
+                        const fontSize = Math.max(14, Math.floor(selectionWidth * 0.11));
                         ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                         ctx.textAlign = 'center'; 
 
@@ -696,7 +696,7 @@
                         const qrImg = (img && img.src) ? img : qrCanvas;
                         
                         const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                        const fontSize = Math.max(14, Math.floor(qrSize * 0.09));
+                        const fontSize = Math.max(14, Math.floor(qrSize * 0.11));
 
                         const arabicNumber = convertToArabicNumbers(indexNumber);
                         const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
