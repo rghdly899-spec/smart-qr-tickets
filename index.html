@@ -602,14 +602,18 @@
         function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
-                const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
+                
+                // إنشاء مربع خاص ومستقل لهذه التذكرة فقط
+                const tempQrContainer = document.getElementById('tempQr');
+                const tempQrDiv = document.createElement('div');
+                tempQrContainer.appendChild(tempQrDiv);
+                
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: 400, height: 400, 
                     colorDark: document.getElementById('qrColorPicker').value, 
                     colorLight: "rgba(0,0,0,0)", correctLevel: QRCode.CorrectLevel.L 
                 });
                 
-                // دالة فحص ذكية تتأكد إن الباركود انطبع قبل ما تكمل 
                 const checkReady = setInterval(() => {
                     const img = tempQrDiv.querySelector('img');
                     const qrCanvas = tempQrDiv.querySelector('canvas');
@@ -656,16 +660,24 @@
                             ctx.fillText(compText, centerX, currentBottomY);
                         }
                         
-                        canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.82);
+                        canvas.toBlob((blob) => { 
+                            tempQrDiv.remove(); // حذف المربع بعد الانتهاء لمنع التداخل
+                            resolve(blob); 
+                        }, 'image/jpeg', 0.82);
                     }
-                }, 10); // يفحص كل 10 أجزاء من الثانية
+                }, 10);
             });
         }
 
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
-                const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
+                
+                // إنشاء مربع خاص ومستقل لهذه التذكرة فقط
+                const tempQrContainer = document.getElementById('tempQr');
+                const tempQrDiv = document.createElement('div');
+                tempQrContainer.appendChild(tempQrDiv);
+                
                 const qrSize = parseInt(document.getElementById('qrSizeInput').value);
                 
                 new QRCode(tempQrDiv, { 
@@ -675,7 +687,6 @@
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
-                // دالة فحص ذكية تتأكد إن الباركود انطبع قبل ما تكمل
                 const checkReady = setInterval(() => {
                     const img = tempQrDiv.querySelector('img');
                     const qrCanvas = tempQrDiv.querySelector('canvas');
@@ -735,7 +746,10 @@
                             ctx.fillText(compText, centerX, currentBottomY);
                         }
                         
-                        canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
+                        canvas.toBlob((blob) => { 
+                            tempQrDiv.remove(); // حذف المربع بعد الانتهاء لمنع التداخل
+                            resolve(blob); 
+                        }, 'image/png');
                     }
                 }, 10);
             });
