@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -30,10 +29,9 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8 relative" id="bodyElement">
 
-    <!-- حاوية الإشعارات Toast -->
     <div id="toastContainer" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
 
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[70]">
         <div class="bg-white p-6 rounded-2xl w-96 max-w-[90%] space-y-4 shadow-2xl">
             <h3 class="text-xl font-bold text-gray-800 border-b pb-2">⚙️ تخصيص مظهر الموقع</h3>
             <div>
@@ -47,6 +45,26 @@
             <div class="flex gap-3 pt-4">
                 <button onclick="saveSettings()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl transition">حفظ التغييرات</button>
                 <button onclick="closeSettings()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl transition">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="folderModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-2 md:p-6 backdrop-blur-sm transition-all">
+        <div class="bg-white w-full max-w-5xl h-[95vh] md:h-[85vh] flex flex-col rounded-2xl relative shadow-2xl overflow-hidden">
+            <div class="p-5 md:p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50 shrink-0">
+                <div class="flex items-center gap-3 w-full md:w-auto mt-8 md:mt-0">
+                    <button onclick="closeFolder()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 text-lg md:text-xl transition bg-white border rounded-full h-8 w-8 flex items-center justify-center shadow-sm">✖</button>
+                    <h2 id="modalTitle" class="text-xl md:text-2xl font-bold text-purple-800 truncate max-w-[250px] md:max-w-md"></h2>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <button onclick="toggleSelectAll()" id="selectAllBtn" class="flex-1 md:flex-none bg-white text-gray-700 text-xs font-bold px-3 py-2.5 rounded-xl transition border border-gray-200 shadow-sm hover:bg-gray-100">تحديد الكل</button>
+                    <button onclick="shareSelectedTicketsGroup()" class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex justify-center items-center gap-1.5">📤 مشاركة</button>
+                    <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف</button>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-gray-100">
+                <div id="modalTicketsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"></div>
             </div>
         </div>
     </div>
@@ -140,7 +158,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-6 items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap gap-6 items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4">
                     <div class="flex items-center gap-2">
                         <label class="text-gray-700 font-semibold text-sm">عدد التذاكر للتوليد:</label>
                         <input type="number" id="ticketCount" value="5" min="1" max="500" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50 transition-colors">
@@ -150,18 +168,8 @@
                     </button>
                 </div>
                 
-                <div class="flex flex-wrap gap-3 justify-between items-center pt-2">
-                    <div class="flex items-center gap-2">
-                        <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2.5 rounded-xl transition border shadow-sm">تحديد الكل</button>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5">📤 مشاركة وحفظ للألبوم</button>
-                        <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف المحددة</button>
-                    </div>
-                </div>
-                
-                <div class="pt-6 border-t mt-4" id="ticketsContainerWrapper">
-                    <div class="text-gray-700 font-bold text-lg mb-4 flex items-center gap-2">🗂️ التذاكر المحفوظة (اضغط على المجلد للفتح):</div>
+                <div class="pt-6 border-t mt-8" id="ticketsContainerWrapper">
+                    <div class="text-gray-700 font-bold text-xl mb-6 flex items-center gap-2">🗂️ مناسباتي ومجلداتي:</div>
                     <div id="ticketsContainer" class="space-y-4"></div>
                 </div>
             </section>
@@ -178,6 +186,7 @@
     <div id="tempQr" class="hidden"></div>
 
     <script>
+        // إعدادات الإشعارات
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -211,6 +220,8 @@
         let originalInviteImage = null; let rawImageX = 0; let rawImageY = 0;
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
+        let allTicketsData = []; 
+        let currentActiveFolder = null;
 
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
@@ -400,20 +411,21 @@
         resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
         resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
 
+        // تحميل المجلدات والتذاكر
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
                 const container = document.getElementById('ticketsContainer');
-                container.innerHTML = `
-                    <div class="animate-pulse space-y-4">
-                        <div class="h-14 bg-gray-200 rounded-xl w-full"></div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
-                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
-                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
-                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
-                        </div>
-                    </div>`;
+                
+                // إظهار التحميل فقط إذا لم تكن النافذة مفتوحة
+                if (!currentActiveFolder) {
+                    container.innerHTML = `
+                        <div class="animate-pulse grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div class="h-32 bg-gray-200 rounded-2xl w-full"></div>
+                            <div class="h-32 bg-gray-200 rounded-2xl w-full"></div>
+                            <div class="h-32 bg-gray-200 rounded-2xl w-full"></div>
+                        </div>`;
+                }
                 
                 const { data, error } = await supabaseClient
                     .from('tickets')
@@ -421,9 +433,19 @@
                     .eq('user_id', currentUser.id)
                     .order('created_at', { ascending: true });
                     
-                if (error) { container.innerHTML = '<p class="text-red-500 text-center font-bold">فشل تحميل التذاكر</p>'; return; }
+                if (error) { 
+                    if (!currentActiveFolder) container.innerHTML = '<p class="text-red-500 text-center font-bold">فشل تحميل التذاكر</p>'; 
+                    return; 
+                }
+                
+                allTicketsData = data;
                 container.innerHTML = '';
-                if(data.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-4 font-bold">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
+                
+                if(data.length === 0) { 
+                    container.innerHTML = '<p class="text-gray-400 text-center py-4 font-bold">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; 
+                    if (currentActiveFolder) closeFolder(); 
+                    return; 
+                }
                 
                 const eventsMap = new Map();
                 data.forEach(ticket => { 
@@ -432,31 +454,65 @@
                     eventsMap.get(eventName).push(ticket); 
                 });
                 
+                // رسم المجلدات في الشاشة الرئيسية
+                const foldersGrid = document.createElement('div');
+                foldersGrid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6";
+                
                 for (const [eventName, tickets] of eventsMap) { 
-                    const eventDiv = document.createElement('div');
-                    eventDiv.className = 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden';
-                    const safeId = eventName.replace(/\s+/g, '-');
-                    
-                    eventDiv.innerHTML = `
-                        <div class="cursor-pointer bg-gray-50 hover:bg-gray-100 transition p-4 flex justify-between items-center border-b border-gray-200" onclick="document.getElementById('grid-${safeId}').classList.toggle('hidden'); document.getElementById('icon-${safeId}').classList.toggle('rotate-180')">
-                            <h3 class="font-bold text-lg text-purple-700 select-none flex items-center gap-2">
-                                📁 ${eventName} 
-                                <span class="text-xs text-gray-500 bg-white border px-2 py-1 rounded-full mr-2">${tickets.length} تذكرة</span>
-                            </h3>
-                            <span id="icon-${safeId}" class="text-gray-500 transition-transform duration-300">🔽</span>
-                        </div>
-                        <div class="p-4 hidden transition-all" id="grid-${safeId}">
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="inner-grid-${safeId}"></div>
-                        </div>
+                    const folderCard = document.createElement('div');
+                    folderCard.className = 'bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-purple-400 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group';
+                    folderCard.onclick = () => openFolderModal(eventName);
+                    folderCard.innerHTML = `
+                        <div class="text-5xl group-hover:scale-110 transition-transform duration-300">📁</div>
+                        <h3 class="font-bold text-lg text-gray-800 text-center truncate w-full px-2" title="${eventName}">${eventName}</h3>
+                        <span class="text-xs font-bold text-purple-600 bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">${tickets.length} تذكرة</span>
                     `;
-                    container.appendChild(eventDiv);
-                    const grid = document.getElementById(`inner-grid-${safeId}`);
-                    for (let i = 0; i < tickets.length; i++) { await renderMergeTicketCard(grid, tickets[i], i + 1); } 
+                    foldersGrid.appendChild(folderCard);
                 }
+                container.appendChild(foldersGrid);
+
+                // تحديث صامت للنافذة إذا كانت مفتوحة
+                if (currentActiveFolder) {
+                    if (eventsMap.has(currentActiveFolder)) {
+                        openFolderModal(currentActiveFolder, true);
+                    } else {
+                        closeFolder(); 
+                    }
+                }
+                
             } catch (err) { console.error(err); }
         }
 
-        // تم الاستغناء عن الخلفية البيضاء، والاعتماد على WebP لجودة 0.9 مع بقاء الشفافية
+        // فتح نافذة المجلد
+        async function openFolderModal(eventName, silent = false) {
+            currentActiveFolder = eventName;
+            const modal = document.getElementById('folderModal');
+            document.getElementById('modalTitle').innerText = '📁 ' + eventName;
+            
+            if (!silent) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // منع تمرير الشاشة الخلفية
+            }
+            
+            const grid = document.getElementById('modalTicketsGrid');
+            if (!silent) grid.innerHTML = '<p class="col-span-full text-center text-gray-400 font-bold py-10">جاري تحميل التذاكر...</p>';
+            
+            const folderTickets = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName);
+            
+            grid.innerHTML = '';
+            for (let i = 0; i < folderTickets.length; i++) { 
+                await renderMergeTicketCard(grid, folderTickets[i], i + 1); 
+            }
+        }
+
+        // إغلاق نافذة المجلد
+        function closeFolder() {
+            currentActiveFolder = null;
+            document.getElementById('folderModal').classList.add('hidden');
+            document.body.style.overflow = 'auto'; // إعادة التمرير الطبيعي
+        }
+
+        // توليد الباركود المدمج
         function generateTicketBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -472,7 +528,6 @@
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
                     
-                    // إزالة الخلفية البيضاء لضمان الشفافية التامة
                     ctx.drawImage(originalInviteImage, 0, 0);
                     selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
                     ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
@@ -484,12 +539,12 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                     
-                    // التصدير كـ WebP بجودة 0.9 (يحافظ على الشفافية بحجم صغير جداً)
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
                 }, 50);
             });
         }
 
+        // توليد الباركود المفرغ فقط
         function generateQROnlyBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -499,7 +554,7 @@
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: qrSize, height: qrSize, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", // عودة الخلفية الشفافة للباركود المفرغ
+                    colorLight: "rgba(0,0,0,0)", 
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
@@ -510,7 +565,6 @@
                     
                     canvas.width = qrSize; canvas.height = qrSize + extraHeight;
 
-                    // بدون خلفية بيضاء
                     ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
                     
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
@@ -520,7 +574,6 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, qrSize / 2, qrSize + 5);
                     
-                    // التصدير كـ WebP بجودة 0.9
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
                 }, 50);
             });
@@ -554,7 +607,6 @@
                     if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1, guestName); } 
                     else { imageBlob = await generateQROnlyBlob(code, i + 1, guestName); }
                     
-                    // حفظ بالامتداد الجديد webp
                     const filePath = `${currentUser.id}/${code}.webp`;
                     const { error: uploadError } = await supabaseClient.storage
                         .from('tickets')
@@ -590,34 +642,40 @@
 
         async function renderMergeTicketCard(gridTarget, ticket, indexNumber) {
             const card = document.createElement('div');
-            card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
+            card.className = `bg-white border border-gray-200 ${ticket.is_used ? 'opacity-80' : ''} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm relative hover:border-purple-400 hover:shadow-md transition`;
             
-            // جلب الرابط بالصيغ الثلاثة (WebP للجديد، ثم JPG ثم PNG للقديم) لضمان أن كل تذاكرك السابقة تظهر بشكل سليم
             const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.webp`).data.publicUrl;
             const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.jpg`).data.publicUrl;
             const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`).data.publicUrl;
 
-            const reactivateBtnHtml = ticket.is_used ? `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : '';
-            const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate">👤 ${ticket.guest_name}</span></div>` : '';
+            const reactivateBtnHtml = ticket.is_used ? `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-2 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : '';
+            const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1.5"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate" title="${ticket.guest_name}">👤 ${ticket.guest_name}</span></div>` : '';
 
             card.innerHTML = `
-                <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10">
-                <div class="flex items-center justify-between w-full px-1 pt-2 pb-1">
-                    <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">${ticket.code}</span>
-                    <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-full font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
+                <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10 shadow-sm">
+                <div class="flex items-center justify-between w-full px-1 pt-2 pb-2">
+                    <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono">${ticket.code}</span>
+                    <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-md font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
                 </div>
                 ${guestBadge}
-                <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <!-- سلسلة احتياطية للصيغ: يبحث عن Webp، إذا لم يجده يبحث عن jpg، ثم png -->
-                    <img id="combined-img-${ticket.code}" src="${webpUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${pngUrl}';};" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
+                <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
+                    <img id="combined-img-${ticket.code}" src="${webpUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${pngUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
             gridTarget.appendChild(card);
         }
 
+        function toggleSelectAll() {
+            let allSelected = false;
+            const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]');
+            for(let cb of checkboxes) { if(!cb.checked) { allSelected = true; break; } }
+            checkboxes.forEach(cb => cb.checked = allSelected);
+            document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
+        }
+
         async function shareSelectedTicketsGroup() {
-            const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
+            const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { showToast("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌", 'warning'); return; }
             const filesArray = [];
             
@@ -654,12 +712,11 @@
         }
 
         async function deleteSelectedTickets() {
-            const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
+            const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]:checked');
             if (checkboxes.length === 0) { showToast("الرجاء تحديد تذكرة لحذفها! ❌", 'warning'); return; }
             if (confirm(`هل أنت متأكد من حذف الـ (${checkboxes.length}) تذاكر المحددة؟`)) {
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
-                    // حذف جميع الصيغ المحتملة للتأكد من تنظيف المساحة
                     const filesToDelete = Array.from(checkboxes).flatMap(cb => [
                         `${currentUser.id}/${cb.dataset.ticketCode}.webp`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
@@ -673,14 +730,6 @@
                     showToast("تم الحذف بنجاح! 🗑️", 'success'); loadExistingTickets();
                 } catch (err) { showToast(err.message, 'error'); }
             }
-        }
-
-        function toggleSelectAll() {
-            let allSelected = false;
-            const checkboxes = document.querySelectorAll('input[name="ticketSelect"]');
-            for(let cb of checkboxes) { if(!cb.checked) { allSelected = true; break; } }
-            checkboxes.forEach(cb => cb.checked = allSelected);
-            document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
         }
 
         async function verifyTicket(code) {
