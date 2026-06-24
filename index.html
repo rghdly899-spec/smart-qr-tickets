@@ -20,7 +20,6 @@
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
 
-        /* تنسيق الإشعارات */
         .toast-enter { transform: translateY(-100%); opacity: 0; }
         .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .toast-leave { transform: translateY(0); opacity: 1; }
@@ -186,7 +185,6 @@
     <div id="tempQr" class="hidden"></div>
 
     <script>
-        // إعدادات الإشعارات
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -345,15 +343,41 @@
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
-                    originalInviteImage = img;
-                    const canvas = document.getElementById('invitationCanvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width; canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    canvas.classList.remove('hidden');
-                    document.getElementById('mapInstruction').classList.remove('hidden');
-                    document.getElementById('selectionMarker').style.display = 'none'; 
-                    rawImageX = 0; rawImageY = 0;
+                    // --- تعديل وتصغير الصورة تلقائياً لتقليل الحجم ---
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1080; // الدقة السحرية لحجم 150-170 كيلوبايت
+
+                    if (width > MAX_SIZE || height > MAX_SIZE) {
+                        if (width > height) {
+                            height = Math.round((MAX_SIZE / width) * height);
+                            width = MAX_SIZE;
+                        } else {
+                            width = Math.round((MAX_SIZE / height) * width);
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, width, height);
+
+                    const optimizedImg = new Image();
+                    optimizedImg.onload = function() {
+                        originalInviteImage = optimizedImg;
+                        const canvas = document.getElementById('invitationCanvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = optimizedImg.width; canvas.height = optimizedImg.height;
+                        ctx.drawImage(optimizedImg, 0, 0);
+                        canvas.classList.remove('hidden');
+                        document.getElementById('mapInstruction').classList.remove('hidden');
+                        document.getElementById('selectionMarker').style.display = 'none'; 
+                        rawImageX = 0; rawImageY = 0;
+                    };
+                    // تصدير كـ JPEG من البداية لتسهيل معالجتها
+                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
                 };
                 img.src = event.target.result;
             };
@@ -411,13 +435,11 @@
         resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
         resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
 
-        // تحميل المجلدات والتذاكر
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
                 const container = document.getElementById('ticketsContainer');
                 
-                // إظهار التحميل فقط إذا لم تكن النافذة مفتوحة
                 if (!currentActiveFolder) {
                     container.innerHTML = `
                         <div class="animate-pulse grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -454,7 +476,6 @@
                     eventsMap.get(eventName).push(ticket); 
                 });
                 
-                // رسم المجلدات في الشاشة الرئيسية
                 const foldersGrid = document.createElement('div');
                 foldersGrid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6";
                 
@@ -471,7 +492,6 @@
                 }
                 container.appendChild(foldersGrid);
 
-                // تحديث صامت للنافذة إذا كانت مفتوحة
                 if (currentActiveFolder) {
                     if (eventsMap.has(currentActiveFolder)) {
                         openFolderModal(currentActiveFolder, true);
@@ -483,7 +503,6 @@
             } catch (err) { console.error(err); }
         }
 
-        // فتح نافذة المجلد
         async function openFolderModal(eventName, silent = false) {
             currentActiveFolder = eventName;
             const modal = document.getElementById('folderModal');
@@ -491,7 +510,7 @@
             
             if (!silent) {
                 modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // منع تمرير الشاشة الخلفية
+                document.body.style.overflow = 'hidden'; 
             }
             
             const grid = document.getElementById('modalTicketsGrid');
@@ -505,14 +524,12 @@
             }
         }
 
-        // إغلاق نافذة المجلد
         function closeFolder() {
             currentActiveFolder = null;
             document.getElementById('folderModal').classList.add('hidden');
-            document.body.style.overflow = 'auto'; // إعادة التمرير الطبيعي
+            document.body.style.overflow = 'auto'; 
         }
 
-        // توليد الباركود المدمج
         function generateTicketBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -539,12 +556,12 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                     
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
+                    // تحويلها لـ JPEG بجودة 0.82 للوصول للحجم الخفيف 150-170 كيلوبايت
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.82);
                 }, 50);
             });
         }
 
-        // توليد الباركود المفرغ فقط
         function generateQROnlyBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -574,7 +591,7 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, qrSize / 2, qrSize + 5);
                     
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
                 }, 50);
             });
         }
@@ -603,14 +620,23 @@
                     const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
                     const guestName = namesArray[i] || null; 
                     let imageBlob;
+                    let ext;
+                    let mimeType;
                     
-                    if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1, guestName); } 
-                    else { imageBlob = await generateQROnlyBlob(code, i + 1, guestName); }
+                    if (mode === 'merged') { 
+                        imageBlob = await generateTicketBlob(code, i + 1, guestName); 
+                        ext = 'jpg';
+                        mimeType = 'image/jpeg';
+                    } else { 
+                        imageBlob = await generateQROnlyBlob(code, i + 1, guestName); 
+                        ext = 'png';
+                        mimeType = 'image/png';
+                    }
                     
-                    const filePath = `${currentUser.id}/${code}.webp`;
+                    const filePath = `${currentUser.id}/${code}.${ext}`;
                     const { error: uploadError } = await supabaseClient.storage
                         .from('tickets')
-                        .upload(filePath, imageBlob, { contentType: 'image/webp', upsert: true });
+                        .upload(filePath, imageBlob, { contentType: mimeType, upsert: true });
                         
                     if (uploadError) throw uploadError;
                     
@@ -644,9 +670,9 @@
             const card = document.createElement('div');
             card.className = `bg-white border border-gray-200 ${ticket.is_used ? 'opacity-80' : ''} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm relative hover:border-purple-400 hover:shadow-md transition`;
             
-            const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.webp`).data.publicUrl;
             const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.jpg`).data.publicUrl;
             const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`).data.publicUrl;
+            const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.webp`).data.publicUrl;
 
             const reactivateBtnHtml = ticket.is_used ? `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-2 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : '';
             const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1.5"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate" title="${ticket.guest_name}">👤 ${ticket.guest_name}</span></div>` : '';
@@ -659,7 +685,7 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${webpUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${pngUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
+                    <img id="combined-img-${ticket.code}" src="${jpgUrl}" onerror="this.onerror=null; this.src='${pngUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
@@ -688,16 +714,16 @@
                 const ticketCode = cb.dataset.ticketCode;
                 const ticketNumber = cb.dataset.ticketNumber;
                 
-                const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.webp`).data.publicUrl;
                 const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
                 const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
+                const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.webp`).data.publicUrl;
                 
                 try {
-                    let response = await fetch(webpUrl);
-                    let finalType = 'image/webp'; let extension = 'webp';
+                    let response = await fetch(jpgUrl);
+                    let finalType = 'image/jpeg'; let extension = 'jpg';
                     if (!response.ok) { 
-                        response = await fetch(jpgUrl); finalType = 'image/jpeg'; extension = 'jpg';
-                        if (!response.ok) { response = await fetch(pngUrl); finalType = 'image/png'; extension = 'png'; }
+                        response = await fetch(pngUrl); finalType = 'image/png'; extension = 'png';
+                        if (!response.ok) { response = await fetch(webpUrl); finalType = 'image/webp'; extension = 'webp'; }
                     }
                     const blob = await response.blob();
                     filesArray.push(new File([blob], `تذكرة_رقم_${ticketNumber}.${extension}`, { type: finalType }));
@@ -718,9 +744,9 @@
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
                     const filesToDelete = Array.from(checkboxes).flatMap(cb => [
-                        `${currentUser.id}/${cb.dataset.ticketCode}.webp`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
-                        `${currentUser.id}/${cb.dataset.ticketCode}.png`
+                        `${currentUser.id}/${cb.dataset.ticketCode}.png`,
+                        `${currentUser.id}/${cb.dataset.ticketCode}.webp`
                     ]);
                     
                     await supabaseClient.storage.from('tickets').remove(filesToDelete);
