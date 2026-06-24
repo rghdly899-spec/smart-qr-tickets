@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -370,7 +371,7 @@
                 img.onload = function() {
                     let width = img.width;
                     let height = img.height;
-                    const MAX_SIZE = 2000; 
+                    const MAX_SIZE = 1080; 
 
                     if (width > MAX_SIZE || height > MAX_SIZE) {
                         if (width > height) {
@@ -400,7 +401,7 @@
                         document.getElementById('selectionMarker').style.display = 'none'; 
                         rawImageX = 0; rawImageY = 0;
                     };
-                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.95);
+                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
                 };
                 img.src = event.target.result;
             };
@@ -677,7 +678,7 @@
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove(); 
                                 resolve(blob); 
-                            }, 'image/jpeg', 0.95);
+                            }, 'image/jpeg', 0.82);
                         }, 50);
                     }
                 }, 10);
