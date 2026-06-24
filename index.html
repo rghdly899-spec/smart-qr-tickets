@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -59,7 +58,7 @@
             <section class="bg-white p-6 rounded-2xl shadow-md space-y-5">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-2">⚙️ لوحة دمج وتوليد التذاكر الذكية</h2>
                 
-                <!-- خيارات المناسبة ونوع التوليد -->
+                <!-- خيارات المناسبة، نوع التوليد، وقائمة الأسماء -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
                         <label class="text-gray-700 font-semibold text-sm">📁 المجلد / اسم المناسبة:</label>
@@ -79,11 +78,20 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- مربع إدخال الأسماء -->
+                    <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2 md:col-span-2 shadow-sm">
+                        <label class="text-purple-800 font-bold text-sm flex items-center gap-2">
+                            📋 قائمة أسماء الضيوف (اختياري):
+                        </label>
+                        <textarea id="guestNamesInput" rows="3" placeholder="الصق الأسماء هنا (كل اسم في سطر)&#10;مثال:&#10;رغد&#10;غيداء&#10;ليندا" class="w-full px-3 py-2 border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 resize-y" oninput="updateTicketCount()"></textarea>
+                        <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم تحديد عدد التذاكر تلقائياً ولن تحتاج لإدخال العدد يدوياً.</p>
+                    </div>
                 </div>
 
-                <div class="flex flex-wrap gap-6 bg-purple-50 p-4 rounded-xl border border-purple-100 items-center justify-start">
+                <div class="flex flex-wrap gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center justify-start">
                     <div class="flex items-center gap-3">
-                        <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والترقيم:</label>
+                        <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والاسم:</label>
                         <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm">
                     </div>
                     <div class="flex items-center gap-3">
@@ -111,7 +119,7 @@
                 <div class="flex flex-wrap gap-6 items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                     <div class="flex items-center gap-2">
                         <label class="text-gray-700 font-semibold text-sm">عدد التذاكر للتوليد:</label>
-                        <input type="number" id="ticketCount" value="5" min="1" max="500" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50">
+                        <input type="number" id="ticketCount" value="5" min="1" max="500" class="border rounded-xl px-3 py-2 w-20 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50 transition-colors">
                     </div>
                     <button onclick="processTickets()" id="processBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow flex items-center gap-2">
                         ⚡ بدء التوليد والحفظ
@@ -139,7 +147,7 @@
     <!-- شاشة الفحص -->
     <section id="scannerSection" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex-col justify-center items-center border-2 border-purple-400 mt-10">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
-        <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4">
+        <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4 shadow-inner">
             <p class="text-gray-400 text-lg animate-pulse">جاري التحقق من حالة التذكرة...</p>
         </div>
     </section>
@@ -162,6 +170,22 @@
                 document.getElementById('designSection').classList.add('hidden');
             } else {
                 document.getElementById('designSection').classList.remove('hidden');
+            }
+        }
+
+        // تحديث عدد التذاكر تلقائياً بناءً على الأسماء المدخلة
+        function updateTicketCount() {
+            const namesInput = document.getElementById('guestNamesInput').value;
+            const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
+            const countInput = document.getElementById('ticketCount');
+            
+            if (namesArray.length > 0) {
+                countInput.value = namesArray.length;
+                countInput.disabled = true;
+                countInput.classList.add('bg-purple-100', 'text-purple-800');
+            } else {
+                countInput.disabled = false;
+                countInput.classList.remove('bg-purple-100', 'text-purple-800');
             }
         }
 
@@ -365,8 +389,8 @@
             } catch (err) { console.error(err); }
         }
 
-        // دالة تحويل التصميم إلى ملف ليتم رفعه (الباركود مفرغ/شفاف تماماً)
-        function generateTicketBlob(code, indexNumber) {
+        // دالة تحويل التصميم إلى ملف (الباركود مفرغ ويطبع الاسم أو الرقم)
+        function generateTicketBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 const tempQrDiv = document.getElementById('tempQr');
@@ -390,15 +414,18 @@
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
                     ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
                     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                    ctx.fillText(convertToArabicNumbers(indexNumber), selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
+                    
+                    // إذا كان هناك اسم ضيف اطبعه، وإلا اطبع الرقم
+                    const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
+                    ctx.fillText(textToDraw, selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                     
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
                 }, 50);
             });
         }
 
-        // دالة استخراج باركود مفرغ فقط (بدون تصميم) للرفع المباشر
-        function generateQROnlyBlob(code, indexNumber) {
+        // دالة استخراج باركود مفرغ فقط (ويطبع الاسم أو الرقم تحته)
+        function generateQROnlyBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
@@ -414,7 +441,7 @@
                 setTimeout(() => {
                     const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    const extraHeight = Math.max(30, Math.floor(qrSize * 0.2));
+                    const extraHeight = Math.max(35, Math.floor(qrSize * 0.25)); // مساحة أكبر شوي عشان الاسم
                     
                     canvas.width = qrSize; canvas.height = qrSize + extraHeight;
                     ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
@@ -422,17 +449,23 @@
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
                     ctx.font = `bold ${Math.max(16, Math.floor(qrSize * 0.12))}px "Tajawal", sans-serif`;
                     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                    ctx.fillText(convertToArabicNumbers(indexNumber), qrSize / 2, qrSize + 5);
+                    
+                    const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
+                    ctx.fillText(textToDraw, qrSize / 2, qrSize + 5);
                     
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
                 }, 50);
             });
         }
 
-        // دالة التوليد والرفع للسحابة
+        // دالة التوليد والرفع للسحابة (مع الأسماء)
         async function processTickets() {
             const mode = document.querySelector('input[name="ticketMode"]:checked').value;
             const eventName = document.getElementById('eventNameInput').value.trim() || 'عام (بدون مجلد)';
+            
+            // قراءة الأسماء من المربع
+            const namesInput = document.getElementById('guestNamesInput').value;
+            const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
 
             if (mode === 'merged' && !originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
             if (mode === 'merged' && document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
@@ -443,15 +476,17 @@
             btn.disabled = true; btn.innerText = "جاري التوليد والرفع... ⏳";
 
             try {
-                const count = parseInt(document.getElementById('ticketCount').value);
+                // الاعتماد على عدد الأسماء إذا وُجدت، وإلا نعتمد على الرقم المكتوب
+                const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
                 for (let i = 0; i < count; i++) {
                     const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    const guestName = namesArray[i] || null; // اسم الضيف الحالي أو null
                     let imageBlob;
                     
-                    if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1); } 
-                    else { imageBlob = await generateQROnlyBlob(code, i + 1); }
+                    if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1, guestName); } 
+                    else { imageBlob = await generateQROnlyBlob(code, i + 1, guestName); }
                     
                     const filePath = `${currentUser.id}/${code}.png`;
                     const { error: uploadError } = await supabaseClient.storage
@@ -460,13 +495,22 @@
                         
                     if (uploadError) throw uploadError;
                     
-                    ticketsToInsert.push({ code: code, is_used: false, user_id: currentUser.id, event_name: eventName });
+                    ticketsToInsert.push({ 
+                        code: code, 
+                        is_used: false, 
+                        user_id: currentUser.id, 
+                        event_name: eventName,
+                        guest_name: guestName // حفظ الاسم في قاعدة البيانات
+                    });
                 }
                 
                 const { error } = await supabaseClient.from('tickets').insert(ticketsToInsert);
                 if (error) throw error;
                 
-                alert(`تم توليد وحفظ ${count} تذاكر لمناسبة (${eventName}) بنجاح! ✨`); 
+                alert(`تم توليد وحفظ ${count} تذاكر بنجاح! ✨`);
+                // تفريغ المربع بعد التوليد
+                document.getElementById('guestNamesInput').value = '';
+                updateTicketCount();
                 loadExistingTickets(); 
             } catch (err) { 
                 alert("حدث خطأ أثناء المعالجة: " + err.message); 
@@ -503,17 +547,20 @@
             const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`);
             const imageUrl = data.publicUrl;
 
-            // زر إعادة التفعيل يظهر فقط إذا التذكرة مستخدمة
             const reactivateBtnHtml = ticket.is_used ? 
                 `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : 
                 '';
+                
+            // عرض اسم الضيف كـ شارة فوق التذكرة إذا كان موجود
+            const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate">👤 ${ticket.guest_name}</span></div>` : '';
 
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10">
-                <div class="flex items-center justify-between w-full px-1 pt-2">
+                <div class="flex items-center justify-between w-full px-1 pt-2 pb-1">
                     <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">${ticket.code}</span>
                     <span class="text-[9px] ${ticket.is_used ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} px-1.5 py-0.5 rounded-full font-bold">${ticket.is_used ? 'مستخدمة' : 'جاهزة'}</span>
                 </div>
+                ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
                     <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
                 </div>
@@ -582,9 +629,16 @@
                 resultScreen.innerHTML = '<p class="text-purple-600 animate-pulse font-bold">جاري الفحص...</p>';
                 const { data, error } = await supabaseClient.from('tickets').select('*').eq('code', code).single();
                 if (error || !data) { resultScreen.innerHTML = `<div class="bg-yellow-100 border-4 border-yellow-500 text-yellow-800 p-8 rounded-2xl font-bold text-xl">⚠️ كود غير مسجل بالنظام!</div>`; return; }
+                
+                const guestNameText = data.guest_name ? `<div class="text-indigo-700 mt-3 text-2xl font-black bg-white/50 py-2 rounded-xl border border-indigo-200">باسم: ${data.guest_name}</div>` : '';
+
                 if (data.is_used === false) {
                     await supabaseClient.from('tickets').update({ is_used: true, scanned_at: new Date().toISOString() }).eq('code', code);
-                    resultScreen.innerHTML = `<div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl">✅ تذكرة صالحة ومؤكدة 👍</div>`;
+                    resultScreen.innerHTML = `
+                        <div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl">
+                            <div>✅ تذكرة صالحة ومؤكدة 👍</div>
+                            ${guestNameText}
+                        </div>`;
                 } else {
                     const formattedDateTime = new Date(data.scanned_at).toLocaleString('ar-SA', {
                         dateStyle: 'long',
@@ -593,6 +647,7 @@
                     resultScreen.innerHTML = `
                         <div class="bg-red-100 border-4 border-red-500 text-red-900 p-6 rounded-2xl text-lg font-bold space-y-2">
                             <div>❌ تذكرة مستخدمة مسبقاً!</div>
+                            ${data.guest_name ? `<div class="text-red-700 font-black text-xl py-1">الاسم: ${data.guest_name}</div>` : ''}
                             <div class="text-sm font-normal text-gray-700 border-t border-red-200 pt-2 mt-2 font-mono">
                                 📅 ${formattedDateTime}
                             </div>
