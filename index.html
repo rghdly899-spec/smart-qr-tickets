@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -9,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-        body { font-family: 'Tajawal', sans-serif; }
+        body { font-family: 'Tajawal', sans-serif; transition: background-color 0.3s ease; }
         
         input[type="checkbox"] { cursor: pointer; accent-color: #7e22ce; }
         #canvasWrapper { touch-action: none; }
@@ -21,9 +22,26 @@
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 relative" id="bodyElement">
 
-    <!-- شاشة تسجيل الدخول -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-2xl w-96 max-w-[90%] space-y-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 border-b pb-2">⚙️ تخصيص مظهر الموقع</h3>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">اسم المتجر / الواجهة:</label>
+                <input type="text" id="storeNameInput" class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:border-purple-500" placeholder="مثال: متجر دعواتي">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">لون خلفية الموقع:</label>
+                <input type="color" id="bgColorInput" class="w-full h-10 rounded cursor-pointer border-0 p-0" value="#f3f4f6">
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button onclick="saveSettings()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl transition">حفظ التغييرات</button>
+                <button onclick="closeSettings()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl transition">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <div id="authSection" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 hidden mt-10 border-t-4 border-purple-600">
         <div class="text-center">
             <h2 class="text-2xl font-bold text-gray-800">مرحباً بك 👋</h2>
@@ -45,20 +63,23 @@
         </div>
     </div>
 
-    <!-- لوحة التحكم الرئيسية -->
     <div id="mainContent" class="max-w-4xl mx-auto space-y-8 hidden">
         <div id="adminPanel" class="space-y-8">
             <header class="text-center bg-purple-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
-                <button onclick="handleLogout()" class="absolute top-4 left-4 md:top-6 md:left-6 bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 md:px-4 md:py-2 rounded-xl transition shadow flex items-center gap-1 z-10">
-                    تسجيل خروج 🚪
-                </button>
-                <h1 class="text-2xl md:text-3xl font-bold mt-8 md:mt-0 relative z-10">🎟️ Smart QR Generator</h1>
+                <div class="absolute top-4 left-4 md:top-6 md:left-6 flex gap-2 z-10">
+                    <button onclick="openSettings()" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-2 md:px-4 md:py-2 rounded-xl transition shadow flex items-center gap-1">
+                        ⚙️ تخصيص
+                    </button>
+                    <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 md:px-4 md:py-2 rounded-xl transition shadow flex items-center gap-1">
+                        تسجيل خروج 🚪
+                    </button>
+                </div>
+                <h1 id="storeNameDisplay" class="text-2xl md:text-3xl font-bold mt-10 md:mt-0 relative z-10">🎟️ Smart QR Generator</h1>
             </header>
 
             <section class="bg-white p-6 rounded-2xl shadow-md space-y-5">
                 <h2 class="text-xl font-bold text-gray-800 border-b pb-2">⚙️ لوحة دمج وتوليد التذاكر الذكية</h2>
                 
-                <!-- خيارات المناسبة، نوع التوليد، وقائمة الأسماء -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
                         <label class="text-gray-700 font-semibold text-sm">📁 المجلد / اسم المناسبة:</label>
@@ -79,13 +100,12 @@
                         </div>
                     </div>
 
-                    <!-- مربع إدخال الأسماء -->
                     <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2 md:col-span-2 shadow-sm">
                         <label class="text-purple-800 font-bold text-sm flex items-center gap-2">
                             📋 قائمة أسماء الضيوف (اختياري):
                         </label>
                         <textarea id="guestNamesInput" rows="3" placeholder="الصق الأسماء هنا (كل اسم في سطر)&#10;مثال:&#10;رغد&#10;غيداء&#10;ليندا" class="w-full px-3 py-2 border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 resize-y" oninput="updateTicketCount()"></textarea>
-                        <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم تحديد عدد التذاكر تلقائياً ولن تحتاج لإدخال العدد يدوياً.</p>
+                        <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم تحديد عدد التذاكر تلقائياً.</p>
                     </div>
                 </div>
 
@@ -94,14 +114,9 @@
                         <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والاسم:</label>
                         <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm">
                     </div>
-                    <div class="flex items-center gap-3">
-                        <label class="text-gray-700 font-semibold text-sm">📏 حجم الباركود:</label>
-                        <input type="number" id="qrSizeInput" value="250" min="50" max="1000" step="10" class="border rounded-xl px-3 py-2 w-24 text-center focus:outline-none focus:border-purple-500 font-bold bg-white">
-                        <span class="text-xs text-gray-500">بكسل</span>
-                    </div>
+                    <input type="hidden" id="qrSizeInput" value="250">
                 </div>
 
-                <!-- قسم التصميم (يختفي إذا اختار باركود فقط) -->
                 <div id="designSection" class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all">
                     <div class="flex items-center gap-3">
                         <label class="text-gray-700 font-semibold text-sm">تحميل تصميم الدعوة (PNG/JPG):</label>
@@ -137,14 +152,13 @@
                 </div>
                 
                 <div class="pt-6 border-t mt-4" id="ticketsContainerWrapper">
-                    <div class="text-gray-700 font-bold text-lg mb-4 flex items-center gap-2">🗂️ التذاكر المحفوظة (حسب المناسبة):</div>
-                    <div id="ticketsContainer" class="space-y-6"></div>
+                    <div class="text-gray-700 font-bold text-lg mb-4 flex items-center gap-2">🗂️ التذاكر المحفوظة (اضغط على المجلد للفتح):</div>
+                    <div id="ticketsContainer" class="space-y-4"></div>
                 </div>
             </section>
         </div>
     </div>
 
-    <!-- شاشة الفحص -->
     <section id="scannerSection" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md hidden min-h-[60vh] flex-col justify-center items-center border-2 border-purple-400 mt-10">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📱 شاشة الفحص عند البوابة</h2>
         <div id="resultScreen" class="w-full bg-gray-50 border p-8 rounded-2xl text-center space-y-4 shadow-inner">
@@ -163,7 +177,49 @@
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
 
-        // تبديل الواجهة بين الداموج والباركود المفرغ
+        // إعدادات المظهر المخصصة
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+            document.getElementById('storeNameInput').value = currentUser?.user_metadata?.store_name || 'Smart QR Generator';
+            document.getElementById('bgColorInput').value = currentUser?.user_metadata?.bg_color || '#f3f4f6';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        async function saveSettings() {
+            const storeName = document.getElementById('storeNameInput').value || 'Smart QR Generator';
+            const bgColor = document.getElementById('bgColorInput').value || '#f3f4f6';
+            
+            const btn = document.querySelector('button[onclick="saveSettings()"]');
+            btn.innerText = "جاري الحفظ... ⏳"; btn.disabled = true;
+            
+            try {
+                const { data, error } = await supabaseClient.auth.updateUser({
+                    data: { store_name: storeName, bg_color: bgColor }
+                });
+                if (error) throw error;
+                
+                currentUser = data.user;
+                applySettings();
+                closeSettings();
+            } catch (err) {
+                alert("فشل الحفظ: " + err.message);
+            } finally {
+                btn.innerText = "حفظ التغييرات"; btn.disabled = false;
+            }
+        }
+
+        function applySettings() {
+            if (!currentUser) return;
+            const storeName = currentUser.user_metadata?.store_name || 'Smart QR Generator';
+            const bgColor = currentUser.user_metadata?.bg_color || '#f3f4f6';
+            
+            document.getElementById('storeNameDisplay').innerText = '🎟️ ' + storeName;
+            document.getElementById('bodyElement').style.backgroundColor = bgColor;
+        }
+
         function toggleMode() {
             const mode = document.querySelector('input[name="ticketMode"]:checked').value;
             if (mode === 'qr_only') {
@@ -173,7 +229,6 @@
             }
         }
 
-        // تحديث عدد التذاكر تلقائياً بناءً على الأسماء المدخلة
         function updateTicketCount() {
             const namesInput = document.getElementById('guestNamesInput').value;
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
@@ -242,11 +297,13 @@
                 currentUser = session.user;
                 document.getElementById('authSection').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
+                applySettings(); // تطبيق المظهر المخصص للمستخدم
                 loadExistingTickets();
             } else {
                 currentUser = null;
                 document.getElementById('authSection').classList.remove('hidden');
                 document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('bodyElement').style.backgroundColor = '#f3f4f6';
             }
         }
 
@@ -291,14 +348,6 @@
             marker.style.width = displayWidth + 'px';
             marker.style.height = displayHeight + 'px';
         }
-
-        document.getElementById('qrSizeInput').addEventListener('input', function() {
-            const canvas = document.getElementById('invitationCanvas');
-            if (document.getElementById('selectionMarker').style.display === 'block') {
-                const rect = canvas.getBoundingClientRect();
-                updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
-            }
-        });
         
         let isDraggingMarker = false; let isResizingMarker = false;
         let resizeStartX = 0; let resizeStartSize = 0;
@@ -348,7 +397,6 @@
         resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
         resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
 
-        // تحميل التذاكر وتجميعها حسب المجلد/المناسبة
         async function loadExistingTickets() {
             if (!currentUser) return; 
             try {
@@ -365,7 +413,6 @@
                 container.innerHTML = '';
                 if(data.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
                 
-                // تصنيف التذاكر حسب اسم المناسبة
                 const eventsMap = new Map();
                 data.forEach(ticket => { 
                     const eventName = ticket.event_name || 'عام (بدون مجلد)';
@@ -373,15 +420,28 @@
                     eventsMap.get(eventName).push(ticket); 
                 });
                 
-                // رسم التذاكر في مجاميع منظمة
                 for (const [eventName, tickets] of eventsMap) { 
                     const eventDiv = document.createElement('div');
-                    eventDiv.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6';
-                    eventDiv.innerHTML = `<h3 class="font-bold text-lg mb-4 text-purple-700 border-b pb-2">📁 مجلد: ${eventName} <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mr-2">${tickets.length} تذكرة</span></h3>
-                                          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="grid-${eventName.replace(/\s+/g, '-')}"></div>`;
+                    eventDiv.className = 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden';
+                    
+                    const safeId = eventName.replace(/\s+/g, '-');
+                    
+                    // تصميم المجلد كـ Accordion يفتح ويغلق
+                    eventDiv.innerHTML = `
+                        <div class="cursor-pointer bg-gray-50 hover:bg-gray-100 transition p-4 flex justify-between items-center border-b border-gray-200" onclick="document.getElementById('grid-${safeId}').classList.toggle('hidden'); document.getElementById('icon-${safeId}').classList.toggle('rotate-180')">
+                            <h3 class="font-bold text-lg text-purple-700 select-none flex items-center gap-2">
+                                📁 ${eventName} 
+                                <span class="text-xs text-gray-500 bg-white border px-2 py-1 rounded-full mr-2">${tickets.length} تذكرة</span>
+                            </h3>
+                            <span id="icon-${safeId}" class="text-gray-500 transition-transform duration-300">🔽</span>
+                        </div>
+                        <div class="p-4 hidden transition-all" id="grid-${safeId}">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="inner-grid-${safeId}"></div>
+                        </div>
+                    `;
                     container.appendChild(eventDiv);
                     
-                    const grid = eventDiv.querySelector('div[id^="grid-"]');
+                    const grid = document.getElementById(`inner-grid-${safeId}`);
                     for (let i = 0; i < tickets.length; i++) { 
                         await renderMergeTicketCard(grid, tickets[i], i + 1); 
                     } 
@@ -389,7 +449,6 @@
             } catch (err) { console.error(err); }
         }
 
-        // دالة تحويل التصميم إلى ملف (الباركود مفرغ ويطبع الاسم أو الرقم)
         function generateTicketBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -415,7 +474,6 @@
                     ctx.font = `bold ${Math.max(18, Math.floor(selectionWidth * 0.15))}px "Tajawal", sans-serif`;
                     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
                     
-                    // إذا كان هناك اسم ضيف اطبعه، وإلا اطبع الرقم
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                     
@@ -424,7 +482,6 @@
             });
         }
 
-        // دالة استخراج باركود مفرغ فقط (ويطبع الاسم أو الرقم تحته)
         function generateQROnlyBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -441,7 +498,7 @@
                 setTimeout(() => {
                     const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    const extraHeight = Math.max(35, Math.floor(qrSize * 0.25)); // مساحة أكبر شوي عشان الاسم
+                    const extraHeight = Math.max(35, Math.floor(qrSize * 0.25)); 
                     
                     canvas.width = qrSize; canvas.height = qrSize + extraHeight;
                     ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
@@ -458,12 +515,10 @@
             });
         }
 
-        // دالة التوليد والرفع للسحابة (مع الأسماء)
         async function processTickets() {
             const mode = document.querySelector('input[name="ticketMode"]:checked').value;
             const eventName = document.getElementById('eventNameInput').value.trim() || 'عام (بدون مجلد)';
             
-            // قراءة الأسماء من المربع
             const namesInput = document.getElementById('guestNamesInput').value;
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
 
@@ -476,13 +531,12 @@
             btn.disabled = true; btn.innerText = "جاري التوليد والرفع... ⏳";
 
             try {
-                // الاعتماد على عدد الأسماء إذا وُجدت، وإلا نعتمد على الرقم المكتوب
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
                 for (let i = 0; i < count; i++) {
                     const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-                    const guestName = namesArray[i] || null; // اسم الضيف الحالي أو null
+                    const guestName = namesArray[i] || null; 
                     let imageBlob;
                     
                     if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1, guestName); } 
@@ -500,7 +554,7 @@
                         is_used: false, 
                         user_id: currentUser.id, 
                         event_name: eventName,
-                        guest_name: guestName // حفظ الاسم في قاعدة البيانات
+                        guest_name: guestName 
                     });
                 }
                 
@@ -508,7 +562,6 @@
                 if (error) throw error;
                 
                 alert(`تم توليد وحفظ ${count} تذاكر بنجاح! ✨`);
-                // تفريغ المربع بعد التوليد
                 document.getElementById('guestNamesInput').value = '';
                 updateTicketCount();
                 loadExistingTickets(); 
@@ -519,7 +572,6 @@
             }
         }
 
-        // إعادة تفعيل التذكرة
         async function reactivateTicket(ticketId, ticketCode) {
             if (confirm(`هل أنت متأكد من إعادة تفعيل التذكرة (${ticketCode})؟`)) {
                 try {
@@ -551,7 +603,6 @@
                 `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : 
                 '';
                 
-            // عرض اسم الضيف كـ شارة فوق التذكرة إذا كان موجود
             const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate">👤 ${ticket.guest_name}</span></div>` : '';
 
             card.innerHTML = `
