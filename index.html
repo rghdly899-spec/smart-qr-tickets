@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -15,8 +14,19 @@
         input[type="checkbox"] { cursor: pointer; accent-color: #7e22ce; }
         #canvasWrapper { touch-action: none; }
         #invitationCanvas { max-width: 100%; cursor: crosshair; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #selectionMarker { position: absolute; border: 2px dashed #ff4040; background-color: rgba(255, 64, 64, 0.2); border-radius: 8px; display: none; pointer-events: none; transition: all 0.2s ease-out; z-index: 5; }
-        #resizeHandle { position: absolute; bottom: -10px; left: -10px; width: 24px; height: 24px; background-color: #ff4040; border: 3px solid white; border-radius: 50%; cursor: sw-resize; pointer-events: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        
+        /* تعديل المربع الوهمي (الظل) */
+        #selectionMarker { 
+            position: absolute; 
+            border: 1px dashed rgba(126, 34, 206, 0.4); 
+            background-color: transparent; 
+            border-radius: 8px; 
+            display: none; 
+            pointer-events: none; 
+            z-index: 5; 
+        }
+        
+        #resizeHandle { position: absolute; bottom: -10px; left: -10px; width: 24px; height: 24px; background-color: #7e22ce; border: 3px solid white; border-radius: 50%; cursor: sw-resize; pointer-events: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         input[type="color"] { -webkit-appearance: none; border: none; border-radius: 8px; padding: 0; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
@@ -130,7 +140,7 @@
                         <label class="text-purple-800 font-bold text-sm flex items-center gap-2">
                             📋 قائمة أسماء الضيوف (اختياري):
                         </label>
-                        <textarea id="guestNamesInput" rows="3" placeholder="الصق الأسماء هنا (كل اسم في سطر)&#10;مثال:&#10;رغد&#10;غيداء&#10;ليندا" class="w-full px-3 py-2 border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 resize-y" oninput="updateTicketCount()"></textarea>
+                        <textarea id="guestNamesInput" rows="3" placeholder="الصق الأسماء هنا (كل اسم في سطر)&#10;مثال:&#10;رغد&#10;غيداء&#10;ليندا" class="w-full px-3 py-2 border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 resize-y" oninput="updateTicketCount(); triggerShadowUpdate();"></textarea>
                         <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم إلغاء الترقيم التلقائي والاكتفاء بالأسماء.</p>
                     </div>
                 </div>
@@ -138,7 +148,7 @@
                 <div class="flex flex-wrap gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center justify-start">
                     <div class="flex items-center gap-3">
                         <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والاسم:</label>
-                        <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm">
+                        <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm" oninput="triggerShadowUpdate()">
                     </div>
                     <input type="hidden" id="qrSizeInput" value="250">
                 </div>
@@ -152,7 +162,26 @@
                         <p id="mapInstruction" class="text-xs text-purple-600 mb-2 font-bold hidden animate-pulse">💡 ممتاز! اسحب بإصبعك لتحديد المكان، وكبّر أو صغّر من النقطة الحمراء أو بإصبعين</p>
                         <div class="relative inline-block" id="canvasWrapper">
                             <canvas id="invitationCanvas" class="hidden"></canvas>
-                            <div id="selectionMarker"><div id="resizeHandle"></div></div>
+                            <div id="selectionMarker">
+                                <div id="previewTopText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-end" style="bottom: 100%; margin-bottom: 5px;"></div>
+                                
+                                <svg id="previewQrImg" class="w-full h-full opacity-60 pointer-events-none transition-colors duration-200" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="5" y="5" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
+                                    <rect x="12" y="12" width="16" height="16"/>
+                                    <rect x="65" y="5" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
+                                    <rect x="72" y="12" width="16" height="16"/>
+                                    <rect x="5" y="65" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
+                                    <rect x="12" y="72" width="16" height="16"/>
+                                    <rect x="45" y="45" width="10" height="10"/>
+                                    <rect x="45" y="60" width="15" height="15"/>
+                                    <rect x="65" y="45" width="15" height="15"/>
+                                    <rect x="80" y="65" width="15" height="15"/>
+                                </svg>
+                                
+                                <div id="previewBottomText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-start" style="top: 100%; margin-top: 5px;"></div>
+                                
+                                <div id="resizeHandle"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -165,8 +194,8 @@
                     
                     <div class="flex items-center gap-2 border-r pr-4 border-gray-200 w-full lg:w-auto justify-between lg:justify-start">
                         <label class="text-gray-700 font-semibold text-sm">👥 المرافقين:</label>
-                        <input type="number" id="companionsInput" value="0" min="0" class="border rounded-xl px-2 py-2 w-16 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50">
-                        <select id="companionsPos" class="border rounded-xl px-2 py-2 text-sm focus:outline-none focus:border-purple-500 bg-gray-50 font-semibold">
+                        <input type="number" id="companionsInput" value="0" min="0" class="border rounded-xl px-2 py-2 w-16 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50" oninput="triggerShadowUpdate()">
+                        <select id="companionsPos" class="border rounded-xl px-2 py-2 text-sm focus:outline-none focus:border-purple-500 bg-gray-50 font-semibold" onchange="triggerShadowUpdate()">
                             <option value="bottom">تحت الباركود</option>
                             <option value="top">فوق الباركود</option>
                         </select>
@@ -373,19 +402,70 @@
             reader.readAsDataURL(file);
         });
 
+        // دوال التحكم بالمعاينة (الظل) 
         function updateMarkerDisplay(rect, scaleX, scaleY) {
             if (rawImageX === 0 && rawImageY === 0) return;
             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
             selectedX = rawImageX - (selectionWidth / 2);
             selectedY = rawImageY - (selectionWidth / 2);
+            
             const marker = document.getElementById('selectionMarker');
             marker.style.display = 'block';
+            
             const displayWidth = selectionWidth / scaleX;
-            const displayHeight = (selectionWidth + (selectionWidth * 0.25)) / scaleY;
+            const displayHeight = selectionWidth / scaleY; 
+            
             marker.style.left = (selectedX / scaleX) + 'px';
             marker.style.top = (selectedY / scaleY) + 'px';
             marker.style.width = displayWidth + 'px';
             marker.style.height = displayHeight + 'px';
+
+            updateShadowPreview(scaleX);
+        }
+
+        function updateShadowPreview(scaleX) {
+            const color = document.getElementById('qrColorPicker').value;
+            const namesInput = document.getElementById('guestNamesInput').value;
+            const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
+            
+            const guestName = namesArray[0] || 'الاسم (معاينة)';
+            const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
+            const companionsPos = document.getElementById('companionsPos').value;
+            
+            const realFontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
+            const displayFontSize = realFontSize / scaleX;
+
+            const topTextEl = document.getElementById('previewTopText');
+            const bottomTextEl = document.getElementById('previewBottomText');
+            const qrImgEl = document.getElementById('previewQrImg');
+
+            topTextEl.style.color = color;
+            bottomTextEl.style.color = color;
+            topTextEl.style.fontSize = displayFontSize + 'px';
+            bottomTextEl.style.fontSize = displayFontSize + 'px';
+            qrImgEl.style.color = color;
+
+            const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
+            const numText = !namesArray.length ? convertToArabicNumbers(1) : ""; 
+
+            let topContent = '';
+            if (companionsPos === 'top' && compText) topContent += `<div>${compText}</div>`;
+            if (guestName !== 'الاسم (معاينة)' || namesArray.length > 0) topContent += `<div>${guestName}</div>`;
+            else if (namesArray.length === 0) topContent += `<div>الاسم (معاينة)</div>`;
+            topTextEl.innerHTML = topContent;
+
+            let bottomContent = '';
+            if (numText && !namesArray.length) bottomContent += `<div>${numText}</div>`;
+            if (companionsPos === 'bottom' && compText) bottomContent += `<div>${compText}</div>`;
+            bottomTextEl.innerHTML = bottomContent;
+        }
+
+        function triggerShadowUpdate() {
+            const canvas = document.getElementById('invitationCanvas');
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width && document.getElementById('selectionMarker').style.display !== 'none') {
+                updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
+            }
         }
         
         let isDraggingMarker = false; let isResizingMarker = false; let resizeStartX = 0; let resizeStartSize = 0;
@@ -529,51 +609,56 @@
                     colorLight: "rgba(0,0,0,0)", correctLevel: QRCode.CorrectLevel.L 
                 });
                 
-                setTimeout(() => {
-                    const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
+                // دالة فحص ذكية تتأكد إن الباركود انطبع قبل ما تكمل 
+                const checkReady = setInterval(() => {
+                    const img = tempQrDiv.querySelector('img');
+                    const qrCanvas = tempQrDiv.querySelector('canvas');
                     
-                    ctx.drawImage(originalInviteImage, 0, 0);
-                    selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-                    ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
-                    
-                    ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                    const fontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
-                    ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                    ctx.textAlign = 'center'; 
+                    if ((img && img.src) || (qrCanvas && qrCanvas.style.display !== 'none')) {
+                        clearInterval(checkReady);
+                        const qrImg = (img && img.src) ? img : qrCanvas;
+                        
+                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                        canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
+                        
+                        ctx.drawImage(originalInviteImage, 0, 0);
+                        selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
+                        ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
+                        
+                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                        const fontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
+                        ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                        ctx.textAlign = 'center'; 
 
-                    const centerX = selectedX + (selectionWidth / 2);
-                    const arabicNumber = convertToArabicNumbers(indexNumber);
-                    const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
-                    
-                    // --- الرسم فوق الباركود ---
-                    let currentTopY = selectedY - 10;
-                    ctx.textBaseline = 'bottom';
-                    if (companionsPos === 'top' && compText) {
-                        ctx.fillText(compText, centerX, currentTopY);
-                        currentTopY -= (fontSize + 5);
-                    }
-                    if (guestName) {
-                        ctx.fillText(guestName, centerX, currentTopY);
-                    }
+                        const centerX = selectedX + (selectionWidth / 2);
+                        const arabicNumber = convertToArabicNumbers(indexNumber);
+                        const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
+                        
+                        let currentTopY = selectedY - 10;
+                        ctx.textBaseline = 'bottom';
+                        if (companionsPos === 'top' && compText) {
+                            ctx.fillText(compText, centerX, currentTopY);
+                            currentTopY -= (fontSize + 5);
+                        }
+                        if (guestName) {
+                            ctx.fillText(guestName, centerX, currentTopY);
+                        }
 
-                    // --- الرسم تحت الباركود ---
-                    let currentBottomY = selectedY + selectionWidth + 10;
-                    ctx.textBaseline = 'top';
-                    
-                    // التعديل الذكي: نطبع الرقم فقط إذا مافيه اسم
-                    if (!guestName) {
-                        ctx.fillText(arabicNumber, centerX, currentBottomY);
-                        currentBottomY += (fontSize + 5);
-                    }
+                        let currentBottomY = selectedY + selectionWidth + 10;
+                        ctx.textBaseline = 'top';
+                        
+                        if (!guestName) {
+                            ctx.fillText(arabicNumber, centerX, currentBottomY);
+                            currentBottomY += (fontSize + 5);
+                        }
 
-                    if (companionsPos === 'bottom' && compText) {
-                        ctx.fillText(compText, centerX, currentBottomY);
+                        if (companionsPos === 'bottom' && compText) {
+                            ctx.fillText(compText, centerX, currentBottomY);
+                        }
+                        
+                        canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.82);
                     }
-                    
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.82);
-                }, 50);
+                }, 10); // يفحص كل 10 أجزاء من الثانية
             });
         }
 
@@ -590,64 +675,69 @@
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
-                setTimeout(() => {
-                    const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    const fontSize = Math.max(14, Math.floor(qrSize * 0.09));
+                // دالة فحص ذكية تتأكد إن الباركود انطبع قبل ما تكمل
+                const checkReady = setInterval(() => {
+                    const img = tempQrDiv.querySelector('img');
+                    const qrCanvas = tempQrDiv.querySelector('canvas');
 
-                    const arabicNumber = convertToArabicNumbers(indexNumber);
-                    const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
+                    if ((img && img.src) || (qrCanvas && qrCanvas.style.display !== 'none')) {
+                        clearInterval(checkReady);
+                        const qrImg = (img && img.src) ? img : qrCanvas;
+                        
+                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                        const fontSize = Math.max(14, Math.floor(qrSize * 0.09));
 
-                    let extraTop = 0;
-                    if (guestName) extraTop += fontSize + 10;
-                    if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
-                    if (extraTop === 0) extraTop = 10; 
+                        const arabicNumber = convertToArabicNumbers(indexNumber);
+                        const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                    let extraBottom = 10; 
-                    if (!guestName) extraBottom += fontSize + 5;
-                    if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
-                    if (extraBottom === 10) extraBottom = 15; // حد أدنى للمسافة
-                    
-                    canvas.width = qrSize + 40; 
-                    canvas.height = qrSize + extraTop + extraBottom;
+                        let extraTop = 0;
+                        if (guestName) extraTop += fontSize + 10;
+                        if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
+                        if (extraTop === 0) extraTop = 10; 
 
-                    const drawX = 20; 
-                    const drawY = extraTop; 
-                    const centerX = canvas.width / 2;
+                        let extraBottom = 10; 
+                        if (!guestName) extraBottom += fontSize + 5;
+                        if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
+                        if (extraBottom === 10) extraBottom = 15;
+                        
+                        canvas.width = qrSize + 40; 
+                        canvas.height = qrSize + extraTop + extraBottom;
 
-                    ctx.drawImage(qrImg, drawX, drawY, qrSize, qrSize);
-                    
-                    ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                    ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                    ctx.textAlign = 'center';
-                    
-                    // --- الرسم فوق الباركود ---
-                    let currentTopY = drawY - 10;
-                    ctx.textBaseline = 'bottom';
-                    if (companionsPos === 'top' && compText) {
-                        ctx.fillText(compText, centerX, currentTopY);
-                        currentTopY -= (fontSize + 5);
+                        const drawX = 20; 
+                        const drawY = extraTop; 
+                        const centerX = canvas.width / 2;
+
+                        ctx.drawImage(qrImg, drawX, drawY, qrSize, qrSize);
+                        
+                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                        ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                        ctx.textAlign = 'center';
+                        
+                        let currentTopY = drawY - 10;
+                        ctx.textBaseline = 'bottom';
+                        if (companionsPos === 'top' && compText) {
+                            ctx.fillText(compText, centerX, currentTopY);
+                            currentTopY -= (fontSize + 5);
+                        }
+                        if (guestName) {
+                            ctx.fillText(guestName, centerX, currentTopY);
+                        }
+
+                        let currentBottomY = drawY + qrSize + 10;
+                        ctx.textBaseline = 'top';
+                        
+                        if (!guestName) {
+                            ctx.fillText(arabicNumber, centerX, currentBottomY);
+                            currentBottomY += (fontSize + 5);
+                        }
+
+                        if (companionsPos === 'bottom' && compText) {
+                            ctx.fillText(compText, centerX, currentBottomY);
+                        }
+                        
+                        canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
                     }
-                    if (guestName) {
-                        ctx.fillText(guestName, centerX, currentTopY);
-                    }
-
-                    // --- الرسم تحت الباركود ---
-                    let currentBottomY = drawY + qrSize + 10;
-                    ctx.textBaseline = 'top';
-                    
-                    // التعديل الذكي: نطبع الرقم فقط إذا مافيه اسم
-                    if (!guestName) {
-                        ctx.fillText(arabicNumber, centerX, currentBottomY);
-                        currentBottomY += (fontSize + 5);
-                    }
-
-                    if (companionsPos === 'bottom' && compText) {
-                        ctx.fillText(compText, centerX, currentBottomY);
-                    }
-                    
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
-                }, 50);
+                }, 10);
             });
         }
 
