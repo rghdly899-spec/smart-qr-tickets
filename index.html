@@ -20,9 +20,18 @@
         input[type="color"] { -webkit-appearance: none; border: none; border-radius: 8px; padding: 0; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+
+        /* تنسيق الإشعارات */
+        .toast-enter { transform: translateY(-100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast-leave { transform: translateY(0); opacity: 1; }
+        .toast-leave-active { transform: translateY(-100%); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8 relative" id="bodyElement">
+
+    <!-- حاوية الإشعارات Toast -->
+    <div id="toastContainer" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
 
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-2xl w-96 max-w-[90%] space-y-4 shadow-2xl">
@@ -169,6 +178,32 @@
     <div id="tempQr" class="hidden"></div>
 
     <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-gray-800'; let icon = 'ℹ️';
+            if (type === 'success') { bgColor = 'bg-green-600'; icon = '✅'; }
+            else if (type === 'error') { bgColor = 'bg-red-600'; icon = '❌'; }
+            else if (type === 'warning') { bgColor = 'bg-yellow-500'; icon = '⚠️'; }
+
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 font-bold text-sm w-full toast-enter`;
+            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-enter-active');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-leave-active');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 3500);
+        }
+
         const SUPABASE_URL = "https://jzvoshwxmdhoxqaqvblx.supabase.co";
         const SUPABASE_KEY = "sb_publishable_lqf87dZLacAaZr3q9i63Mw_x9aTxA3R";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -177,21 +212,17 @@
         let selectedX = 0; let selectedY = 0; let selectionWidth = 250; 
         let currentUser = null; 
 
-        // إعدادات المظهر المخصصة
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
             document.getElementById('storeNameInput').value = currentUser?.user_metadata?.store_name || 'Smart QR Generator';
             document.getElementById('bgColorInput').value = currentUser?.user_metadata?.bg_color || '#f3f4f6';
         }
 
-        function closeSettings() {
-            document.getElementById('settingsModal').classList.add('hidden');
-        }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
 
         async function saveSettings() {
             const storeName = document.getElementById('storeNameInput').value || 'Smart QR Generator';
             const bgColor = document.getElementById('bgColorInput').value || '#f3f4f6';
-            
             const btn = document.querySelector('button[onclick="saveSettings()"]');
             btn.innerText = "جاري الحفظ... ⏳"; btn.disabled = true;
             
@@ -200,12 +231,11 @@
                     data: { store_name: storeName, bg_color: bgColor }
                 });
                 if (error) throw error;
-                
                 currentUser = data.user;
-                applySettings();
-                closeSettings();
+                applySettings(); closeSettings();
+                showToast('تم حفظ الإعدادات بنجاح', 'success');
             } catch (err) {
-                alert("فشل الحفظ: " + err.message);
+                showToast("فشل الحفظ: " + err.message, 'error');
             } finally {
                 btn.innerText = "حفظ التغييرات"; btn.disabled = false;
             }
@@ -215,28 +245,22 @@
             if (!currentUser) return;
             const storeName = currentUser.user_metadata?.store_name || 'Smart QR Generator';
             const bgColor = currentUser.user_metadata?.bg_color || '#f3f4f6';
-            
             document.getElementById('storeNameDisplay').innerText = '🎟️ ' + storeName;
             document.getElementById('bodyElement').style.backgroundColor = bgColor;
         }
 
         function toggleMode() {
             const mode = document.querySelector('input[name="ticketMode"]:checked').value;
-            if (mode === 'qr_only') {
-                document.getElementById('designSection').classList.add('hidden');
-            } else {
-                document.getElementById('designSection').classList.remove('hidden');
-            }
+            if (mode === 'qr_only') document.getElementById('designSection').classList.add('hidden');
+            else document.getElementById('designSection').classList.remove('hidden');
         }
 
         function updateTicketCount() {
             const namesInput = document.getElementById('guestNamesInput').value;
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
             const countInput = document.getElementById('ticketCount');
-            
             if (namesArray.length > 0) {
-                countInput.value = namesArray.length;
-                countInput.disabled = true;
+                countInput.value = namesArray.length; countInput.disabled = true;
                 countInput.classList.add('bg-purple-100', 'text-purple-800');
             } else {
                 countInput.disabled = false;
@@ -249,19 +273,17 @@
             const password = document.getElementById('passwordInput').value;
             const btn = document.querySelector('button[onclick="handleSignup()"]');
             const originalText = btn.innerText;
-
-            if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
+            if(!email || !password) return showToast("الرجاء إدخال الإيميل وكلمة المرور", 'warning');
             btn.innerText = "جاري التجهيز... ⏳"; btn.disabled = true;
-
             try {
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) { alert("خطأ: " + error.message); } 
-                else if (data.user && !data.session) { alert("مراجعة بريدك للتفعيل!"); } 
+                if (error) { showToast("خطأ: " + error.message, 'error'); } 
+                else if (data.user && !data.session) { showToast("مراجعة بريدك للتفعيل!", 'info'); } 
                 else if (data.user && data.session) {
                     btn.innerText = "✅ تم الدخول!";
                     setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
-            } catch (err) { alert("حدث خطأ."); }
+            } catch (err) { showToast("حدث خطأ في النظام.", 'error'); }
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
@@ -270,25 +292,20 @@
             const password = document.getElementById('passwordInput').value;
             const btn = document.querySelector('button[onclick="handleLogin()"]');
             const originalText = btn.innerText;
-
-            if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
+            if(!email || !password) return showToast("الرجاء إدخال الإيميل وكلمة المرور", 'warning');
             btn.innerText = "جاري الدخول... ⏳"; btn.disabled = true;
-
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) { alert("خطأ في تسجيل الدخول."); } 
+                if (error) { showToast("خطأ في تسجيل الدخول. تأكد من البيانات.", 'error'); } 
                 else if (data.session) {
                     btn.innerText = "✅ مرحباً بك!";
                     setTimeout(() => { updateAuthState(data.session); }, 500);
                 }
-            } catch (err) { alert("حدث خطأ."); }
+            } catch (err) { showToast("حدث خطأ في النظام.", 'error'); }
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.reload();
-        }
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
 
         function updateAuthState(session) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -297,8 +314,7 @@
                 currentUser = session.user;
                 document.getElementById('authSection').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
-                applySettings(); // تطبيق المظهر المخصص للمستخدم
-                loadExistingTickets();
+                applySettings(); loadExistingTickets();
             } else {
                 currentUser = null;
                 document.getElementById('authSection').classList.remove('hidden');
@@ -313,8 +329,7 @@
         }
 
         document.getElementById('inviteUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
@@ -349,11 +364,8 @@
             marker.style.height = displayHeight + 'px';
         }
         
-        let isDraggingMarker = false; let isResizingMarker = false;
-        let resizeStartX = 0; let resizeStartSize = 0;
-        let initialPinchDist = null; let initialSizePinch = null;
+        let isDraggingMarker = false; let isResizingMarker = false; let resizeStartX = 0; let resizeStartSize = 0;
         const canvas = document.getElementById('invitationCanvas');
-        const canvasWrapper = document.getElementById('canvasWrapper');
         const selectionMarker = document.getElementById('selectionMarker');
         const resizeHandle = document.getElementById('resizeHandle');
         const qrSizeInput = document.getElementById('qrSizeInput');
@@ -375,24 +387,15 @@
         canvas.addEventListener('touchmove', (e) => { if (isDraggingMarker && e.touches.length === 1) { e.preventDefault(); moveMarker(e); } }, {passive: false});
         window.addEventListener('touchend', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
-        function startResize(e) {
-            e.preventDefault(); e.stopPropagation(); isResizingMarker = true;
-            resizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
-            resizeStartSize = parseInt(qrSizeInput.value);
-            selectionMarker.style.transition = 'none';
-        }
-
+        function startResize(e) { e.preventDefault(); e.stopPropagation(); isResizingMarker = true; resizeStartX = e.touches ? e.touches[0].clientX : e.clientX; resizeStartSize = parseInt(qrSizeInput.value); selectionMarker.style.transition = 'none'; }
         function doResize(e) {
-            if (!isResizingMarker) return;
-            e.preventDefault();
+            if (!isResizingMarker) return; e.preventDefault();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const rect = canvas.getBoundingClientRect();
             let newSize = resizeStartSize + ((resizeStartX - clientX) * (canvas.width / rect.width) * 2);
             if (newSize < 50) newSize = 50; if (newSize > 1000) newSize = 1000;
-            qrSizeInput.value = Math.round(newSize);
-            updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
+            qrSizeInput.value = Math.round(newSize); updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
         }
-
         function stopResize() { if (isResizingMarker) { isResizingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } }
         resizeHandle.addEventListener('mousedown', startResize); window.addEventListener('mousemove', doResize); window.addEventListener('mouseup', stopResize);
         resizeHandle.addEventListener('touchstart', startResize, {passive: false}); window.addEventListener('touchmove', doResize, {passive: false}); window.addEventListener('touchend', stopResize);
@@ -401,7 +404,16 @@
             if (!currentUser) return; 
             try {
                 const container = document.getElementById('ticketsContainer');
-                container.innerHTML = '<p class="text-gray-400 text-center py-4">جاري تحميل التذاكر...</p>';
+                container.innerHTML = `
+                    <div class="animate-pulse space-y-4">
+                        <div class="h-14 bg-gray-200 rounded-xl w-full"></div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
+                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
+                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
+                            <div class="bg-gray-200 h-48 rounded-2xl w-full"></div>
+                        </div>
+                    </div>`;
                 
                 const { data, error } = await supabaseClient
                     .from('tickets')
@@ -409,9 +421,9 @@
                     .eq('user_id', currentUser.id)
                     .order('created_at', { ascending: true });
                     
-                if (error) { container.innerHTML = '<p class="text-red-500 text-center">فشل تحميل التذاكر</p>'; return; }
+                if (error) { container.innerHTML = '<p class="text-red-500 text-center font-bold">فشل تحميل التذاكر</p>'; return; }
                 container.innerHTML = '';
-                if(data.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-4">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
+                if(data.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-4 font-bold">لا توجد تذاكر حالياً. ابدأ بتوليد تذاكرك!</p>'; return; }
                 
                 const eventsMap = new Map();
                 data.forEach(ticket => { 
@@ -423,10 +435,8 @@
                 for (const [eventName, tickets] of eventsMap) { 
                     const eventDiv = document.createElement('div');
                     eventDiv.className = 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden';
-                    
                     const safeId = eventName.replace(/\s+/g, '-');
                     
-                    // تصميم المجلد كـ Accordion يفتح ويغلق
                     eventDiv.innerHTML = `
                         <div class="cursor-pointer bg-gray-50 hover:bg-gray-100 transition p-4 flex justify-between items-center border-b border-gray-200" onclick="document.getElementById('grid-${safeId}').classList.toggle('hidden'); document.getElementById('icon-${safeId}').classList.toggle('rotate-180')">
                             <h3 class="font-bold text-lg text-purple-700 select-none flex items-center gap-2">
@@ -440,25 +450,21 @@
                         </div>
                     `;
                     container.appendChild(eventDiv);
-                    
                     const grid = document.getElementById(`inner-grid-${safeId}`);
-                    for (let i = 0; i < tickets.length; i++) { 
-                        await renderMergeTicketCard(grid, tickets[i], i + 1); 
-                    } 
+                    for (let i = 0; i < tickets.length; i++) { await renderMergeTicketCard(grid, tickets[i], i + 1); } 
                 }
             } catch (err) { console.error(err); }
         }
 
+        // تم الاستغناء عن الخلفية البيضاء، والاعتماد على WebP لجودة 0.9 مع بقاء الشفافية
         function generateTicketBlob(code, indexNumber, guestName) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
-                const tempQrDiv = document.getElementById('tempQr');
-                tempQrDiv.innerHTML = '';
+                const tempQrDiv = document.getElementById('tempQr'); tempQrDiv.innerHTML = '';
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: 400, height: 400, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", 
-                    correctLevel: QRCode.CorrectLevel.L 
+                    colorLight: "rgba(0,0,0,0)", correctLevel: QRCode.CorrectLevel.L 
                 });
                 
                 setTimeout(() => {
@@ -466,6 +472,7 @@
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
                     
+                    // إزالة الخلفية البيضاء لضمان الشفافية التامة
                     ctx.drawImage(originalInviteImage, 0, 0);
                     selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
                     ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
@@ -477,7 +484,8 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, selectedX + (selectionWidth / 2), selectedY + selectionWidth + Math.max(5, Math.floor(selectionWidth * 0.05)));
                     
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
+                    // التصدير كـ WebP بجودة 0.9 (يحافظ على الشفافية بحجم صغير جداً)
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
                 }, 50);
             });
         }
@@ -491,7 +499,7 @@
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: qrSize, height: qrSize, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", 
+                    colorLight: "rgba(0,0,0,0)", // عودة الخلفية الشفافة للباركود المفرغ
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
@@ -501,6 +509,8 @@
                     const extraHeight = Math.max(35, Math.floor(qrSize * 0.25)); 
                     
                     canvas.width = qrSize; canvas.height = qrSize + extraHeight;
+
+                    // بدون خلفية بيضاء
                     ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
                     
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
@@ -510,7 +520,8 @@
                     const textToDraw = guestName ? guestName : convertToArabicNumbers(indexNumber);
                     ctx.fillText(textToDraw, qrSize / 2, qrSize + 5);
                     
-                    canvas.toBlob((blob) => { resolve(blob); }, 'image/png');
+                    // التصدير كـ WebP بجودة 0.9
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/webp', 0.9);
                 }, 50);
             });
         }
@@ -522,13 +533,14 @@
             const namesInput = document.getElementById('guestNamesInput').value;
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
 
-            if (mode === 'merged' && !originalInviteImage) { alert("الرجاء تحميل تصميم الدعوة أولاً! ❌"); return; }
-            if (mode === 'merged' && document.getElementById('selectionMarker').style.display === 'none') { alert("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!"); return; }
-            if (!currentUser) { alert("الرجاء تسجيل الدخول أولاً!"); return; }
+            if (mode === 'merged' && !originalInviteImage) { showToast("الرجاء تحميل تصميم الدعوة أولاً! 🖼️", 'warning'); return; }
+            if (mode === 'merged' && document.getElementById('selectionMarker').style.display === 'none') { showToast("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!", 'warning'); return; }
+            if (!currentUser) { showToast("الرجاء تسجيل الدخول أولاً!", 'error'); return; }
             
             const btn = document.getElementById('processBtn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = "جاري التوليد والرفع... ⏳";
+            const originalText = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري التوليد والرفع...`;
 
             try {
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
@@ -542,53 +554,37 @@
                     if (mode === 'merged') { imageBlob = await generateTicketBlob(code, i + 1, guestName); } 
                     else { imageBlob = await generateQROnlyBlob(code, i + 1, guestName); }
                     
-                    const filePath = `${currentUser.id}/${code}.png`;
+                    // حفظ بالامتداد الجديد webp
+                    const filePath = `${currentUser.id}/${code}.webp`;
                     const { error: uploadError } = await supabaseClient.storage
                         .from('tickets')
-                        .upload(filePath, imageBlob, { contentType: 'image/png', upsert: true });
+                        .upload(filePath, imageBlob, { contentType: 'image/webp', upsert: true });
                         
                     if (uploadError) throw uploadError;
                     
                     ticketsToInsert.push({ 
-                        code: code, 
-                        is_used: false, 
-                        user_id: currentUser.id, 
-                        event_name: eventName,
-                        guest_name: guestName 
+                        code: code, is_used: false, user_id: currentUser.id, 
+                        event_name: eventName, guest_name: guestName 
                     });
                 }
                 
                 const { error } = await supabaseClient.from('tickets').insert(ticketsToInsert);
                 if (error) throw error;
                 
-                alert(`تم توليد وحفظ ${count} تذاكر بنجاح! ✨`);
+                showToast(`تم توليد وحفظ ${count} تذاكر بنجاح! ✨`, 'success');
                 document.getElementById('guestNamesInput').value = '';
-                updateTicketCount();
-                loadExistingTickets(); 
-            } catch (err) { 
-                alert("حدث خطأ أثناء المعالجة: " + err.message); 
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
+                updateTicketCount(); loadExistingTickets(); 
+            } catch (err) { showToast("حدث خطأ أثناء المعالجة: " + err.message, 'error'); } 
+            finally { btn.disabled = false; btn.innerHTML = originalText; }
         }
 
         async function reactivateTicket(ticketId, ticketCode) {
             if (confirm(`هل أنت متأكد من إعادة تفعيل التذكرة (${ticketCode})؟`)) {
                 try {
-                    const { error } = await supabaseClient
-                        .from('tickets')
-                        .update({ is_used: false, scanned_at: null })
-                        .eq('id', ticketId);
-
-                    if (error) {
-                        alert("فشل إعادة التفعيل: " + error.message);
-                        return;
-                    }
-                    alert("تم إعادة التفعيل بنجاح! ✅");
-                    loadExistingTickets();
-                } catch (err) {
-                    alert(err.message);
-                }
+                    const { error } = await supabaseClient.from('tickets').update({ is_used: false, scanned_at: null }).eq('id', ticketId);
+                    if (error) { showToast("فشل إعادة التفعيل: " + error.message, 'error'); return; }
+                    showToast("تم إعادة التفعيل بنجاح! ✅", 'success'); loadExistingTickets();
+                } catch (err) { showToast(err.message, 'error'); }
             }
         }
 
@@ -596,13 +592,12 @@
             const card = document.createElement('div');
             card.className = `bg-white border-2 ${ticket.is_used ? 'border-red-200 opacity-70' : 'border-gray-200'} p-3 rounded-2xl flex flex-col items-center justify-center shadow-sm space-y-3 relative hover:border-purple-400 transition`;
             
-            const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`);
-            const imageUrl = data.publicUrl;
+            // جلب الرابط بالصيغ الثلاثة (WebP للجديد، ثم JPG ثم PNG للقديم) لضمان أن كل تذاكرك السابقة تظهر بشكل سليم
+            const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.webp`).data.publicUrl;
+            const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.jpg`).data.publicUrl;
+            const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${ticket.user_id}/${ticket.code}.png`).data.publicUrl;
 
-            const reactivateBtnHtml = ticket.is_used ? 
-                `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : 
-                '';
-                
+            const reactivateBtnHtml = ticket.is_used ? `<button onclick="reactivateTicket(${ticket.id}, '${ticket.code}')" class="mt-1 w-full bg-green-50 text-green-700 hover:bg-green-500 hover:text-white border border-green-200 text-xs font-bold py-1.5 rounded-lg transition shadow-sm flex items-center justify-center gap-1">🔄 إعادة تفعيل</button>` : '';
             const guestBadge = ticket.guest_name ? `<div class="w-full text-center mb-1"><span class="text-[11px] bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold border border-purple-200 block truncate">👤 ${ticket.guest_name}</span></div>` : '';
 
             card.innerHTML = `
@@ -613,7 +608,8 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center min-h-[140px] items-center" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${imageUrl}" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
+                    <!-- سلسلة احتياطية للصيغ: يبحث عن Webp، إذا لم يجده يبحث عن jpg، ثم png -->
+                    <img id="combined-img-${ticket.code}" src="${webpUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${pngUrl}';};" crossorigin="anonymous" class="w-full max-h-[160px] object-contain rounded-lg shadow-sm" alt="Ticket Image"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
@@ -622,47 +618,60 @@
 
         async function shareSelectedTicketsGroup() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
-            if (checkboxes.length === 0) { alert("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌"); return; }
+            if (checkboxes.length === 0) { showToast("الرجاء تحديد التذاكر المراد حفظها أولاً! ❌", 'warning'); return; }
             const filesArray = [];
             
             const btn = document.querySelector('button[onclick="shareSelectedTicketsGroup()"]');
-            const originalText = btn.innerText; btn.innerText = "جاري التجهيز... ⏳";
+            const originalText = btn.innerHTML; 
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري التجهيز...`;
             
             for (let i = 0; i < checkboxes.length; i++) {
                 const cb = checkboxes[i];
                 const ticketCode = cb.dataset.ticketCode;
                 const ticketNumber = cb.dataset.ticketNumber;
                 
-                const { data } = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`);
+                const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.webp`).data.publicUrl;
+                const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
+                const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
                 
                 try {
-                    const response = await fetch(data.publicUrl);
+                    let response = await fetch(webpUrl);
+                    let finalType = 'image/webp'; let extension = 'webp';
+                    if (!response.ok) { 
+                        response = await fetch(jpgUrl); finalType = 'image/jpeg'; extension = 'jpg';
+                        if (!response.ok) { response = await fetch(pngUrl); finalType = 'image/png'; extension = 'png'; }
+                    }
                     const blob = await response.blob();
-                    filesArray.push(new File([blob], `تذكرة_رقم_${ticketNumber}.png`, { type: 'image/png' }));
+                    filesArray.push(new File([blob], `تذكرة_رقم_${ticketNumber}.${extension}`, { type: finalType }));
                 } catch (e) { console.error("فشل تحميل الصورة", e); }
             }
             
-            btn.innerText = originalText;
+            btn.innerHTML = originalText;
 
             if (filesArray.length > 0 && navigator.canShare && navigator.canShare({ files: filesArray })) { 
                 await navigator.share({ files: filesArray, title: 'مشاركة التذاكر المحددة' }); 
-            } else { alert("المشاركة غير مدعومة أو فشل جلب الصور."); }
+            } else { showToast("المشاركة غير مدعومة أو فشل جلب الصور.", 'error'); }
         }
 
         async function deleteSelectedTickets() {
             const checkboxes = document.querySelectorAll('input[name="ticketSelect"]:checked');
-            if (checkboxes.length === 0) { alert("الرجاء تحديد تذكرة لحذفها! ❌"); return; }
+            if (checkboxes.length === 0) { showToast("الرجاء تحديد تذكرة لحذفها! ❌", 'warning'); return; }
             if (confirm(`هل أنت متأكد من حذف الـ (${checkboxes.length}) تذاكر المحددة؟`)) {
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
-                    const filesToDelete = Array.from(checkboxes).map(cb => `${currentUser.id}/${cb.dataset.ticketCode}.png`);
+                    // حذف جميع الصيغ المحتملة للتأكد من تنظيف المساحة
+                    const filesToDelete = Array.from(checkboxes).flatMap(cb => [
+                        `${currentUser.id}/${cb.dataset.ticketCode}.webp`,
+                        `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
+                        `${currentUser.id}/${cb.dataset.ticketCode}.png`
+                    ]);
                     
                     await supabaseClient.storage.from('tickets').remove(filesToDelete);
                     const { error } = await supabaseClient.from('tickets').delete().in('id', idsToDelete);
                     
-                    if (error) { alert("فشل الحذف: " + error.message); return; }
-                    alert("تم الحذف بنجاح! 🗑️"); loadExistingTickets();
-                } catch (err) { alert(err.message); }
+                    if (error) { showToast("فشل الحذف: " + error.message, 'error'); return; }
+                    showToast("تم الحذف بنجاح! 🗑️", 'success'); loadExistingTickets();
+                } catch (err) { showToast(err.message, 'error'); }
             }
         }
 
@@ -677,26 +686,23 @@
         async function verifyTicket(code) {
             try {
                 const resultScreen = document.getElementById('resultScreen');
-                resultScreen.innerHTML = '<p class="text-purple-600 animate-pulse font-bold">جاري الفحص...</p>';
+                resultScreen.innerHTML = '<p class="text-purple-600 animate-pulse font-bold text-xl">جاري الفحص...</p>';
                 const { data, error } = await supabaseClient.from('tickets').select('*').eq('code', code).single();
-                if (error || !data) { resultScreen.innerHTML = `<div class="bg-yellow-100 border-4 border-yellow-500 text-yellow-800 p-8 rounded-2xl font-bold text-xl">⚠️ كود غير مسجل بالنظام!</div>`; return; }
+                if (error || !data) { resultScreen.innerHTML = `<div class="bg-yellow-100 border-4 border-yellow-500 text-yellow-800 p-8 rounded-2xl font-bold text-xl shadow-lg">⚠️ كود غير مسجل بالنظام!</div>`; return; }
                 
                 const guestNameText = data.guest_name ? `<div class="text-indigo-700 mt-3 text-2xl font-black bg-white/50 py-2 rounded-xl border border-indigo-200">باسم: ${data.guest_name}</div>` : '';
 
                 if (data.is_used === false) {
                     await supabaseClient.from('tickets').update({ is_used: true, scanned_at: new Date().toISOString() }).eq('code', code);
                     resultScreen.innerHTML = `
-                        <div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl">
+                        <div class="bg-green-100 border-4 border-green-500 text-green-900 p-8 rounded-2xl font-bold text-xl shadow-lg transform transition-all scale-105">
                             <div>✅ تذكرة صالحة ومؤكدة 👍</div>
                             ${guestNameText}
                         </div>`;
                 } else {
-                    const formattedDateTime = new Date(data.scanned_at).toLocaleString('ar-SA', {
-                        dateStyle: 'long',
-                        timeStyle: 'short'
-                    });
+                    const formattedDateTime = new Date(data.scanned_at).toLocaleString('ar-SA', { dateStyle: 'long', timeStyle: 'short' });
                     resultScreen.innerHTML = `
-                        <div class="bg-red-100 border-4 border-red-500 text-red-900 p-6 rounded-2xl text-lg font-bold space-y-2">
+                        <div class="bg-red-100 border-4 border-red-500 text-red-900 p-6 rounded-2xl text-lg font-bold space-y-2 shadow-lg">
                             <div>❌ تذكرة مستخدمة مسبقاً!</div>
                             ${data.guest_name ? `<div class="text-red-700 font-black text-xl py-1">الاسم: ${data.guest_name}</div>` : ''}
                             <div class="text-sm font-normal text-gray-700 border-t border-red-200 pt-2 mt-2 font-mono">
@@ -705,7 +711,7 @@
                         </div>
                     `;
                 }
-            } catch (err) { alert(err.message); }
+            } catch (err) { showToast(err.message, 'error'); }
         }
 
         window.onload = async function() {
