@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -146,9 +147,13 @@
                 </div>
 
                 <div class="flex flex-wrap gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center justify-start">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 border-l border-gray-300 pl-4">
                         <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والاسم:</label>
                         <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm" oninput="triggerShadowUpdate()">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-gray-700 font-semibold text-sm">🔠 حجم الخط (%):</label>
+                        <input type="number" id="fontSizeInput" value="11" min="1" max="100" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
                     </div>
                     <input type="hidden" id="qrSizeInput" value="250">
                 </div>
@@ -221,7 +226,8 @@
         </div>
     </section>
 
-    <div id="tempQr" class="hidden"></div>
+    <!-- تعديل مهم هنا لمنع اختفاء الباركود -->
+    <div id="tempQr" style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;"></div>
 
     <script>
         function showToast(message, type = 'info') {
@@ -432,7 +438,8 @@
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
             const companionsPos = document.getElementById('companionsPos').value;
             
-            const realFontSize = Math.max(14, Math.floor(selectionWidth * 0.11));
+            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
+            const realFontSize = Math.max(14, Math.floor(selectionWidth * fontRatio));
             const displayFontSize = realFontSize / scaleX;
 
             const topTextEl = document.getElementById('previewTopText');
@@ -603,7 +610,6 @@
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 
-                // إنشاء مربع خاص ومستقل لهذه التذكرة فقط
                 const tempQrContainer = document.getElementById('tempQr');
                 const tempQrDiv = document.createElement('div');
                 tempQrContainer.appendChild(tempQrDiv);
@@ -615,55 +621,65 @@
                 });
                 
                 const checkReady = setInterval(() => {
-                    const img = tempQrDiv.querySelector('img');
                     const qrCanvas = tempQrDiv.querySelector('canvas');
+                    const img = tempQrDiv.querySelector('img');
                     
-                    if ((img && img.src) || (qrCanvas && qrCanvas.style.display !== 'none')) {
+                    let qrSource = null;
+                    if (qrCanvas && qrCanvas.width > 0) {
+                        qrSource = qrCanvas; // نستخدم الكانفاس لأنه أسرع ومضمون
+                    } else if (img && img.src && img.complete && img.naturalWidth > 0) {
+                        qrSource = img; // كخطة بديلة نستخدم الصورة بعد ما نتأكد إنها اكتملت تماماً
+                    }
+                    
+                    if (qrSource) {
                         clearInterval(checkReady);
-                        const qrImg = (img && img.src) ? img : qrCanvas;
                         
-                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                        canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
-                        
-                        ctx.drawImage(originalInviteImage, 0, 0);
-                        selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
-                        ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
-                        
-                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                        const fontSize = Math.max(14, Math.floor(selectionWidth * 0.11));
-                        ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                        ctx.textAlign = 'center'; 
+                        // تأخير بسيط لضمان اكتمال الاستيعاب من المتصفح قبل الدمج
+                        setTimeout(() => {
+                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                            canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
+                            
+                            ctx.drawImage(originalInviteImage, 0, 0);
+                            selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
+                            ctx.drawImage(qrSource, selectedX, selectedY, selectionWidth, selectionWidth);
+                            
+                            ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
+                            const fontSize = Math.max(14, Math.floor(selectionWidth * fontRatio));
+                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                            ctx.textAlign = 'center'; 
 
-                        const centerX = selectedX + (selectionWidth / 2);
-                        const arabicNumber = convertToArabicNumbers(indexNumber);
-                        const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
-                        
-                        let currentTopY = selectedY - 10;
-                        ctx.textBaseline = 'bottom';
-                        if (companionsPos === 'top' && compText) {
-                            ctx.fillText(compText, centerX, currentTopY);
-                            currentTopY -= (fontSize + 5);
-                        }
-                        if (guestName) {
-                            ctx.fillText(guestName, centerX, currentTopY);
-                        }
+                            const centerX = selectedX + (selectionWidth / 2);
+                            const arabicNumber = convertToArabicNumbers(indexNumber);
+                            const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
+                            
+                            let currentTopY = selectedY - 10;
+                            ctx.textBaseline = 'bottom';
+                            if (companionsPos === 'top' && compText) {
+                                ctx.fillText(compText, centerX, currentTopY);
+                                currentTopY -= (fontSize + 5);
+                            }
+                            if (guestName) {
+                                ctx.fillText(guestName, centerX, currentTopY);
+                            }
 
-                        let currentBottomY = selectedY + selectionWidth + 10;
-                        ctx.textBaseline = 'top';
-                        
-                        if (!guestName) {
-                            ctx.fillText(arabicNumber, centerX, currentBottomY);
-                            currentBottomY += (fontSize + 5);
-                        }
+                            let currentBottomY = selectedY + selectionWidth + 10;
+                            ctx.textBaseline = 'top';
+                            
+                            if (!guestName) {
+                                ctx.fillText(arabicNumber, centerX, currentBottomY);
+                                currentBottomY += (fontSize + 5);
+                            }
 
-                        if (companionsPos === 'bottom' && compText) {
-                            ctx.fillText(compText, centerX, currentBottomY);
-                        }
-                        
-                        canvas.toBlob((blob) => { 
-                            tempQrDiv.remove(); // حذف المربع بعد الانتهاء لمنع التداخل
-                            resolve(blob); 
-                        }, 'image/jpeg', 0.82);
+                            if (companionsPos === 'bottom' && compText) {
+                                ctx.fillText(compText, centerX, currentBottomY);
+                            }
+                            
+                            canvas.toBlob((blob) => { 
+                                tempQrDiv.remove(); 
+                                resolve(blob); 
+                            }, 'image/jpeg', 0.82);
+                        }, 50);
                     }
                 }, 10);
             });
@@ -673,7 +689,6 @@
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 
-                // إنشاء مربع خاص ومستقل لهذه التذكرة فقط
                 const tempQrContainer = document.getElementById('tempQr');
                 const tempQrDiv = document.createElement('div');
                 tempQrContainer.appendChild(tempQrDiv);
@@ -688,68 +703,77 @@
                 });
 
                 const checkReady = setInterval(() => {
-                    const img = tempQrDiv.querySelector('img');
                     const qrCanvas = tempQrDiv.querySelector('canvas');
+                    const img = tempQrDiv.querySelector('img');
 
-                    if ((img && img.src) || (qrCanvas && qrCanvas.style.display !== 'none')) {
+                    let qrSource = null;
+                    if (qrCanvas && qrCanvas.width > 0) {
+                        qrSource = qrCanvas;
+                    } else if (img && img.src && img.complete && img.naturalWidth > 0) {
+                        qrSource = img;
+                    }
+
+                    if (qrSource) {
                         clearInterval(checkReady);
-                        const qrImg = (img && img.src) ? img : qrCanvas;
                         
-                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                        const fontSize = Math.max(14, Math.floor(qrSize * 0.11));
+                        setTimeout(() => {
+                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
+                            const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
 
-                        const arabicNumber = convertToArabicNumbers(indexNumber);
-                        const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
+                            const arabicNumber = convertToArabicNumbers(indexNumber);
+                            const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                        let extraTop = 0;
-                        if (guestName) extraTop += fontSize + 10;
-                        if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
-                        if (extraTop === 0) extraTop = 10; 
+                            let extraTop = 0;
+                            if (guestName) extraTop += fontSize + 10;
+                            if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
+                            if (extraTop === 0) extraTop = 10; 
 
-                        let extraBottom = 10; 
-                        if (!guestName) extraBottom += fontSize + 5;
-                        if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
-                        if (extraBottom === 10) extraBottom = 15;
-                        
-                        canvas.width = qrSize + 40; 
-                        canvas.height = qrSize + extraTop + extraBottom;
+                            let extraBottom = 10; 
+                            if (!guestName) extraBottom += fontSize + 5;
+                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
+                            if (extraBottom === 10) extraBottom = 15;
+                            
+                            canvas.width = qrSize + 40; 
+                            canvas.height = qrSize + extraTop + extraBottom;
 
-                        const drawX = 20; 
-                        const drawY = extraTop; 
-                        const centerX = canvas.width / 2;
+                            const drawX = 20; 
+                            const drawY = extraTop; 
+                            const centerX = canvas.width / 2;
 
-                        ctx.drawImage(qrImg, drawX, drawY, qrSize, qrSize);
-                        
-                        ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                        ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                        ctx.textAlign = 'center';
-                        
-                        let currentTopY = drawY - 10;
-                        ctx.textBaseline = 'bottom';
-                        if (companionsPos === 'top' && compText) {
-                            ctx.fillText(compText, centerX, currentTopY);
-                            currentTopY -= (fontSize + 5);
-                        }
-                        if (guestName) {
-                            ctx.fillText(guestName, centerX, currentTopY);
-                        }
+                            ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
+                            
+                            ctx.fillStyle = document.getElementById('qrColorPicker').value;
+                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                            ctx.textAlign = 'center';
+                            
+                            let currentTopY = drawY - 10;
+                            ctx.textBaseline = 'bottom';
+                            if (companionsPos === 'top' && compText) {
+                                ctx.fillText(compText, centerX, currentTopY);
+                                currentTopY -= (fontSize + 5);
+                            }
+                            if (guestName) {
+                                ctx.fillText(guestName, centerX, currentTopY);
+                            }
 
-                        let currentBottomY = drawY + qrSize + 10;
-                        ctx.textBaseline = 'top';
-                        
-                        if (!guestName) {
-                            ctx.fillText(arabicNumber, centerX, currentBottomY);
-                            currentBottomY += (fontSize + 5);
-                        }
+                            let currentBottomY = drawY + qrSize + 10;
+                            ctx.textBaseline = 'top';
+                            
+                            if (!guestName) {
+                                ctx.fillText(arabicNumber, centerX, currentBottomY);
+                                currentBottomY += (fontSize + 5);
+                            }
 
-                        if (companionsPos === 'bottom' && compText) {
-                            ctx.fillText(compText, centerX, currentBottomY);
-                        }
-                        
-                        canvas.toBlob((blob) => { 
-                            tempQrDiv.remove(); // حذف المربع بعد الانتهاء لمنع التداخل
-                            resolve(blob); 
-                        }, 'image/png');
+                            if (companionsPos === 'bottom' && compText) {
+                                ctx.fillText(compText, centerX, currentBottomY);
+                            }
+                            
+                            canvas.toBlob((blob) => { 
+                                tempQrDiv.remove();
+                                resolve(blob); 
+                            }, 'image/png');
+                        }, 50);
                     }
                 }, 10);
             });
