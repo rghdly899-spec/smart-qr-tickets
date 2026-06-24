@@ -131,7 +131,7 @@
                             📋 قائمة أسماء الضيوف (اختياري):
                         </label>
                         <textarea id="guestNamesInput" rows="3" placeholder="الصق الأسماء هنا (كل اسم في سطر)&#10;مثال:&#10;رغد&#10;غيداء&#10;ليندا" class="w-full px-3 py-2 border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 resize-y" oninput="updateTicketCount()"></textarea>
-                        <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم تحديد عدد التذاكر تلقائياً.</p>
+                        <p class="text-xs text-purple-600 font-semibold">ملاحظة: إذا أدخلت أسماء، سيتم إلغاء الترقيم التلقائي والاكتفاء بالأسماء.</p>
                     </div>
                 </div>
 
@@ -539,7 +539,7 @@
                     ctx.drawImage(qrImg, selectedX, selectedY, selectionWidth, selectionWidth);
                     
                     ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                    const fontSize = Math.max(16, Math.floor(selectionWidth * 0.12));
+                    const fontSize = Math.max(14, Math.floor(selectionWidth * 0.09));
                     ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                     ctx.textAlign = 'center'; 
 
@@ -561,9 +561,14 @@
                     // --- الرسم تحت الباركود ---
                     let currentBottomY = selectedY + selectionWidth + 10;
                     ctx.textBaseline = 'top';
-                    ctx.fillText(arabicNumber, centerX, currentBottomY);
-                    if (companionsPos === 'bottom' && compText) {
+                    
+                    // التعديل الذكي: نطبع الرقم فقط إذا مافيه اسم
+                    if (!guestName) {
+                        ctx.fillText(arabicNumber, centerX, currentBottomY);
                         currentBottomY += (fontSize + 5);
+                    }
+
+                    if (companionsPos === 'bottom' && compText) {
                         ctx.fillText(compText, centerX, currentBottomY);
                     }
                     
@@ -588,19 +593,20 @@
                 setTimeout(() => {
                     const qrImg = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    const fontSize = Math.max(16, Math.floor(qrSize * 0.12));
+                    const fontSize = Math.max(14, Math.floor(qrSize * 0.09));
 
                     const arabicNumber = convertToArabicNumbers(indexNumber);
                     const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                    // حساب المساحات الإضافية المطلوبة فوق وتحت الباركود
                     let extraTop = 0;
                     if (guestName) extraTop += fontSize + 10;
                     if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
                     if (extraTop === 0) extraTop = 10; 
 
-                    let extraBottom = fontSize + 15; 
-                    if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 10;
+                    let extraBottom = 10; 
+                    if (!guestName) extraBottom += fontSize + 5;
+                    if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
+                    if (extraBottom === 10) extraBottom = 15; // حد أدنى للمسافة
                     
                     canvas.width = qrSize + 40; 
                     canvas.height = qrSize + extraTop + extraBottom;
@@ -629,9 +635,14 @@
                     // --- الرسم تحت الباركود ---
                     let currentBottomY = drawY + qrSize + 10;
                     ctx.textBaseline = 'top';
-                    ctx.fillText(arabicNumber, centerX, currentBottomY);
-                    if (companionsPos === 'bottom' && compText) {
+                    
+                    // التعديل الذكي: نطبع الرقم فقط إذا مافيه اسم
+                    if (!guestName) {
+                        ctx.fillText(arabicNumber, centerX, currentBottomY);
                         currentBottomY += (fontSize + 5);
+                    }
+
+                    if (companionsPos === 'bottom' && compText) {
                         ctx.fillText(compText, centerX, currentBottomY);
                     }
                     
@@ -661,7 +672,6 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                // جلب عدد التذاكر الحالية في هذا المجلد لعمل الترقيم التكميلي التلقائي
                 const { count: existingCount, error: countError } = await supabaseClient
                     .from('tickets')
                     .select('*', { count: 'exact', head: true })
@@ -673,7 +683,7 @@
                 const processSingleTicket = async (loopIndex) => {
                     const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
                     const guestName = namesArray[loopIndex] || null; 
-                    const ticketNum = startIndex + loopIndex; // الترقيم الذكي المستمر
+                    const ticketNum = startIndex + loopIndex; 
 
                     let imageBlob;
                     let ext;
