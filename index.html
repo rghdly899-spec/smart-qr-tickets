@@ -759,7 +759,7 @@
                 new QRCode(tempQrDiv, { 
                     text: verifyUrl, width: qrSize, height: qrSize, 
                     colorDark: document.getElementById('qrColorPicker').value, 
-                    colorLight: "rgba(0,0,0,0)", 
+                    colorLight: "#ffffff", 
                     correctLevel: QRCode.CorrectLevel.L 
                 });
 
@@ -786,41 +786,39 @@
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            // 1. تحديد الخط أولاً عشان نقيس الأبعاد بدقة
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
 
-                            // 2. حساب عرض الكلمات لمنع القص من الجوانب
                             const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
                             const compWidth = compText ? ctx.measureText(compText).width : 0;
                             const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
                             const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
 
-                            // 3. حساب الهوامش العلوية والسفلية ديناميكياً لتفادي القص
-                            let extraTop = 20; // هامش آمن أساسي
+                            let extraTop = 20; 
                             if (guestName) extraTop += fontSize + 15;
                             if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
 
-                            let extraBottom = 20; // هامش آمن أساسي
+                            let extraBottom = 20; 
                             if (!guestName) extraBottom += fontSize + 15;
                             if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
                             
-                            // 4. تعيين العرض والطول ليتمدد تلقائياً مع الكلام (نأخذ الأعرض)
                             canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
                             canvas.height = qrSize + extraTop + extraBottom;
 
-                            const drawX = (canvas.width - qrSize) / 2; // توسيط الباركود
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                            const drawX = (canvas.width - qrSize) / 2; 
                             const drawY = extraTop; 
                             const centerX = canvas.width / 2;
 
-                            // رسم الباركود في مكانه الجديد
+                            ctx.imageSmoothingEnabled = false;
+                            
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
-                            // تجهيز إعدادات رسم النصوص
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
                             
-                            // رسم النص العلوي (مع رفع نقطة الارتكاز لعدم التداخل)
                             let currentTopY = drawY - 15;
                             ctx.textBaseline = 'bottom';
                             if (companionsPos === 'top' && compText) {
@@ -831,7 +829,6 @@
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
-                            // رسم النص السفلي
                             let currentBottomY = drawY + qrSize + 15;
                             ctx.textBaseline = 'top';
                             
@@ -844,11 +841,10 @@
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
-                            // تحويل النتيجة وبقاء الخلفية شفافة
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
-                            }, 'image/png');
+                            }, 'image/jpeg', 0.8);
                         }, 50);
                     }
                 }, 10);
@@ -899,8 +895,8 @@
                         mimeType = 'image/jpeg';
                     } else { 
                         imageBlob = await generateQROnlyBlob(code, ticketNum, guestName, companionsCount, companionsPos); 
-                        ext = 'png';
-                        mimeType = 'image/png';
+                        ext = 'jpg';
+                        mimeType = 'image/jpeg';
                     }
                     
                     const filePath = `${currentUser.id}/${code}.${ext}`;
