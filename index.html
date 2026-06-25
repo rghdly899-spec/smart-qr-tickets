@@ -74,7 +74,6 @@
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-                    <!-- أداة التحديد بالنطاق الجديدة -->
                     <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1.5 shadow-sm mr-auto xl:mr-0">
                         <span class="text-xs text-gray-600 font-bold">من:</span>
                         <input type="number" id="selectFrom" min="1" class="w-10 h-7 text-xs border border-gray-300 rounded focus:outline-none focus:border-purple-500 text-center hide-arrows bg-gray-50">
@@ -779,58 +778,73 @@
                         clearInterval(checkReady);
                         
                         setTimeout(() => {
-                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                            const canvas = document.createElement('canvas'); 
+                            const ctx = canvas.getContext('2d');
                             const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
                             const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            let extraTop = 0;
-                            if (guestName) extraTop += fontSize + 10;
-                            if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
-                            if (extraTop === 0) extraTop = 10; 
+                            // 1. تحديد الخط أولاً عشان نقيس الأبعاد بدقة
+                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
 
-                            let extraBottom = 10; 
-                            if (!guestName) extraBottom += fontSize + 5;
-                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
-                            if (extraBottom === 10) extraBottom = 15;
+                            // 2. حساب عرض الكلمات لمنع القص من الجوانب
+                            const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
+                            const compWidth = compText ? ctx.measureText(compText).width : 0;
+                            const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
+                            const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
+
+                            // 3. حساب الهوامش العلوية والسفلية ديناميكياً لتفادي القص
+                            let extraTop = 20; // هامش آمن أساسي
+                            if (guestName) extraTop += fontSize + 15;
+                            if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
+
+                            let extraBottom = 20; // هامش آمن أساسي
+                            if (!guestName) extraBottom += fontSize + 15;
+                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
                             
-                            canvas.width = qrSize + 40; 
+                            // 4. تعيين العرض والطول ليتمدد تلقائياً مع الكلام (نأخذ الأعرض)
+                            canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
                             canvas.height = qrSize + extraTop + extraBottom;
 
-                            const drawX = 20; 
+                            const drawX = (canvas.width - qrSize) / 2; // توسيط الباركود
                             const drawY = extraTop; 
                             const centerX = canvas.width / 2;
 
+                            // رسم الباركود في مكانه الجديد
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
+                            // تجهيز إعدادات رسم النصوص
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
                             
-                            let currentTopY = drawY - 10;
+                            // رسم النص العلوي (مع رفع نقطة الارتكاز لعدم التداخل)
+                            let currentTopY = drawY - 15;
                             ctx.textBaseline = 'bottom';
                             if (companionsPos === 'top' && compText) {
                                 ctx.fillText(compText, centerX, currentTopY);
-                                currentTopY -= (fontSize + 5);
+                                currentTopY -= (fontSize + 10);
                             }
                             if (guestName) {
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
-                            let currentBottomY = drawY + qrSize + 10;
+                            // رسم النص السفلي
+                            let currentBottomY = drawY + qrSize + 15;
                             ctx.textBaseline = 'top';
                             
                             if (!guestName) {
                                 ctx.fillText(arabicNumber, centerX, currentBottomY);
-                                currentBottomY += (fontSize + 5);
+                                currentBottomY += (fontSize + 10);
                             }
 
                             if (companionsPos === 'bottom' && compText) {
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
+                            // تحويل النتيجة وبقاء الخلفية شفافة
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
@@ -973,7 +987,6 @@
             gridTarget.appendChild(card);
         }
 
-        // دالة تحديد الكل القديمة (لتحديث نص الزر فقط)
         function toggleSelectAll() {
             let allSelected = false;
             const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]');
@@ -982,7 +995,6 @@
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
         }
 
-        // دالة التحديد بالنطاق (الميزة الجديدة)
         function selectRange() {
             const fromVal = parseInt(document.getElementById('selectFrom').value);
             const toVal = parseInt(document.getElementById('selectTo').value);
@@ -1003,13 +1015,13 @@
                     foundAny = true;
                     countSelected++;
                 } else {
-                    cb.checked = false; // يلغي تحديد الباقي عشان ما يصير فيه لخبطة
+                    cb.checked = false; 
                 }
             });
 
             if (foundAny) {
                 showToast(`تم تحديد (${countSelected}) تذاكر من ${fromVal} إلى ${toVal} بنجاح ✅`, "success");
-                document.getElementById('selectAllBtn').innerText = "تحديد الكل"; // إعادة ضبط زر التحديد الكلي
+                document.getElementById('selectAllBtn').innerText = "تحديد الكل"; 
             } else {
                 showToast("لم يتم العثور على تذاكر في هذا النطاق", "warning");
             }
