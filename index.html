@@ -407,7 +407,6 @@
             reader.readAsDataURL(file);
         });
 
-        // دوال التحكم بالمعاينة (الظل) 
         function updateMarkerDisplay(rect, scaleX, scaleY) {
             if (rawImageX === 0 && rawImageY === 0) return;
             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
@@ -625,18 +624,19 @@
                     
                     let qrSource = null;
                     if (qrCanvas && qrCanvas.width > 0) {
-                        qrSource = qrCanvas; // نستخدم الكانفاس لأنه أسرع ومضمون
+                        qrSource = qrCanvas; 
                     } else if (img && img.src && img.complete && img.naturalWidth > 0) {
-                        qrSource = img; // كخطة بديلة نستخدم الصورة بعد ما نتأكد إنها اكتملت تماماً
+                        qrSource = img; 
                     }
                     
                     if (qrSource) {
                         clearInterval(checkReady);
                         
-                        // تأخير بسيط لضمان اكتمال الاستيعاب من المتصفح قبل الدمج
                         setTimeout(() => {
-                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                            canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
+                            const canvas = document.createElement('canvas'); 
+                            canvas.width = originalInviteImage.width; 
+                            canvas.height = originalInviteImage.height;
+                            const ctx = canvas.getContext('2d');
                             
                             ctx.drawImage(originalInviteImage, 0, 0);
                             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
@@ -684,7 +684,7 @@
             });
         }
 
-        // التعديل الآمن في دالة الباركود المفرغ
+        // دالة التوليد المعدلة بالكامل والآمنة من أخطاء الـ Meta المسببة لرفض كانفا
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -717,25 +717,26 @@
                         clearInterval(checkReady);
                         
                         setTimeout(() => {
-                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                             const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
                             const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            // 1. حساب عرض النص لمنع القص الجانبي
-                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                            // الخطوة السحرية: ننشئ كانفاس وهمي ومؤقت "فقط" لحساب قياسات النص بأمان بدون لمس الكانفاس الحقيقي
+                            const dummyCanvas = document.createElement('canvas');
+                            const dummyCtx = dummyCanvas.getContext('2d');
+                            dummyCtx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                            
                             let maxTextWidth = 0;
-                            if (guestName) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(guestName).width);
-                            if (compText) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(compText).width);
-                            if (!guestName) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(arabicNumber).width);
+                            if (guestName) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(guestName).width);
+                            if (compText) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(compText).width);
+                            if (!guestName) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(arabicNumber).width);
 
-                            // 2. تعيين العرض بناءً على النص، مع استخدام Math.ceil لتجنب الفواصل
-                            const newCanvasWidth = Math.max(qrSize + 40, Math.ceil(maxTextWidth) + 60);
+                            // حساب الأبعاد المطلوبة كرقم صحيح ثابت
+                            const finalWidth = Math.ceil(Math.max(qrSize + 40, maxTextWidth + 60));
 
-                            // 3. إضافة هوامش إضافية (20 بيكسل) لمنع قص الحركات العلوية للخط
-                            let extraTop = 20;
+                            let extraTop = 20; 
                             if (guestName) extraTop += fontSize + 10;
                             if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
 
@@ -743,16 +744,23 @@
                             if (!guestName) extraBottom += fontSize + 5;
                             if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
                             
-                            canvas.width = newCanvasWidth; 
-                            canvas.height = qrSize + extraTop + extraBottom;
+                            const finalHeight = qrSize + extraTop + extraBottom;
 
-                            // 4. استخدام Math.floor لمنع الفواصل في الإحداثيات (السبب الرئيسي لرفض كانفا)
-                            const drawX = Math.floor((newCanvasWidth - qrSize) / 2); 
+                            // الآن ننشئ الكانفاس الحقيقي ونثبت أبعاده "قبل" طلب الـ context لمنع تلف الملف
+                            const canvas = document.createElement('canvas');
+                            canvas.width = finalWidth;
+                            canvas.height = finalHeight;
+                            
+                            const ctx = canvas.getContext('2d');
+
+                            const drawX = Math.floor((finalWidth - qrSize) / 2); 
                             const drawY = Math.floor(extraTop); 
-                            const centerX = Math.floor(newCanvasWidth / 2);
+                            const centerX = Math.floor(finalWidth / 2);
 
+                            // رسم الباركود بأمان
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
+                            // إعداد رسم النصوص على أبعاد صحيحة مستقرة
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
@@ -779,6 +787,7 @@
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
+                            // تصدير ملف PNG معياري ونظيف ومستقر يقبله نظام كانفا فوراً
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
@@ -914,7 +923,7 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${jpgUrl}" onerror="this.onerror=null; this.src='${pngUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
+                    <img id="combined-img-${ticket.code}" src="${pngUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
