@@ -667,42 +667,6 @@
             document.body.style.overflow = 'auto'; 
         }
 
-        // دالة التحميل المباشر لضمان التوافق التام لملف الـ PNG مع كانفا
-        async function downloadSingleTicket(ticketCode) {
-            if (!currentUser) return;
-            try {
-                showToast("جاري تجهيز الصورة للتحميل... ⏳", "info");
-                
-                const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
-                const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
-                
-                let response = await fetch(pngUrl);
-                let ext = 'png';
-                
-                // إذا لم تكن مفرغة وكانت دعوة كاملة مدموجة JPG
-                if (!response.ok) { 
-                    response = await fetch(jpgUrl); 
-                    ext = 'jpg'; 
-                }
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `Ticket_${ticketCode}.${ext}`; 
-                document.body.appendChild(a);
-                a.click();
-                
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                
-                showToast("تم تحميل PNG سليم! ارفعه لكانفا الآن ✅", "success");
-            } catch (error) {
-                showToast("فشل التحميل، حاول مرة أخرى", "error");
-            }
-        }
-
         function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -781,7 +745,7 @@
             });
         }
 
-        // دالة التوليد المفرغ بصيغة PNG مع التمدد الديناميكي الذكي لمنع قص النصوص
+        // التعديل هنا: إجبار المتصفح على استخدام أرقام صحيحة (Math.ceil) لمنع تشوه الصورة
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -822,14 +786,14 @@
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            // 1. حساب عرض الكلمات لمنع القص الجانبي للـ PNG
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                            const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
-                            const compWidth = compText ? ctx.measureText(compText).width : 0;
-                            const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
+                            
+                            // استخدام Math.ceil هنا أساسي لمنع الفواصل والأعشار اللي تخرب الملف على كانفا
+                            const nameWidth = guestName ? Math.ceil(ctx.measureText(guestName).width) : 0;
+                            const compWidth = compText ? Math.ceil(ctx.measureText(compText).width) : 0;
+                            const numWidth = (!guestName) ? Math.ceil(ctx.measureText(arabicNumber).width) : 0;
                             const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
 
-                            // 2. حساب الهوامش العلوية والسفلية حسب عدد الأسطر وحجم الخط
                             let extraTop = 20; 
                             if (guestName) extraTop += fontSize + 15;
                             if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
@@ -838,13 +802,13 @@
                             if (!guestName) extraBottom += fontSize + 15;
                             if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
                             
-                            // 3. أبعاد الـ Canvas تتمدد تلقائياً لتبقى خفيفة ومناسبة للحجم المطلوب
-                            canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
-                            canvas.height = qrSize + extraTop + extraBottom;
+                            // إجبار الأبعاد تكون رقم صحيح بدون فواصل
+                            canvas.width = Math.ceil(Math.max(qrSize + 60, maxTextWidth + 80)); 
+                            canvas.height = Math.ceil(qrSize + extraTop + extraBottom);
 
-                            const drawX = (canvas.width - qrSize) / 2; 
-                            const drawY = extraTop; 
-                            const centerX = canvas.width / 2;
+                            const drawX = Math.ceil((canvas.width - qrSize) / 2); 
+                            const drawY = Math.ceil(extraTop); 
+                            const centerX = Math.ceil(canvas.width / 2);
 
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
@@ -874,7 +838,6 @@
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
-                            // حفظ الصورة بصيغة PNG مفرغة سليمة ونقية
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
@@ -930,7 +893,7 @@
                     } else { 
                         imageBlob = await generateQROnlyBlob(code, ticketNum, guestName, companionsCount, companionsPos); 
                         ext = 'png';
-                        mimeType = 'image/png'; // أبقينا على المايم تايب PNG الرسمي
+                        mimeType = 'image/png';
                     }
                     
                     const filePath = `${currentUser.id}/${code}.${ext}`;
@@ -1002,11 +965,7 @@
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10 shadow-sm">
                 
-                <button onclick="downloadSingleTicket('${ticket.code}')" class="absolute top-2 left-3 bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 text-xs px-2.5 py-1 rounded-lg shadow-sm z-10 transition flex items-center gap-1 font-bold" title="تحميل PNG متوافق مع كانفا">
-                    ⬇️ حفظ PNG
-                </button>
-
-                <div class="flex items-center justify-between w-full px-1 pt-8 pb-2">
+                <div class="flex items-center justify-between w-full px-1 pt-2 pb-2">
                     <div class="flex items-center gap-1">
                         <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono">${ticket.code}</span>
                         ${compBadge}
