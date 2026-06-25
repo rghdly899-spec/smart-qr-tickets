@@ -30,7 +30,6 @@
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
 
-        /* إخفاء أسهم الأرقام لترتيب شكل مربعات (من - إلى) */
         input[type="number"].hide-arrows::-webkit-inner-spin-button, 
         input[type="number"].hide-arrows::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -668,6 +667,42 @@
             document.body.style.overflow = 'auto'; 
         }
 
+        // دالة التحميل المباشر لضمان التوافق التام لملف الـ PNG مع كانفا
+        async function downloadSingleTicket(ticketCode) {
+            if (!currentUser) return;
+            try {
+                showToast("جاري تجهيز الصورة للتحميل... ⏳", "info");
+                
+                const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
+                const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
+                
+                let response = await fetch(pngUrl);
+                let ext = 'png';
+                
+                // إذا لم تكن مفرغة وكانت دعوة كاملة مدموجة JPG
+                if (!response.ok) { 
+                    response = await fetch(jpgUrl); 
+                    ext = 'jpg'; 
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Ticket_${ticketCode}.${ext}`; 
+                document.body.appendChild(a);
+                a.click();
+                
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showToast("تم تحميل PNG سليم! ارفعه لكانفا الآن ✅", "success");
+            } catch (error) {
+                showToast("فشل التحميل، حاول مرة أخرى", "error");
+            }
+        }
+
         function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -746,6 +781,7 @@
             });
         }
 
+        // دالة التوليد المفرغ بصيغة PNG مع التمدد الديناميكي الذكي لمنع قص النصوص
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -786,41 +822,36 @@
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            // 1. تحديد الخط أولاً عشان نقيس الأبعاد بدقة
+                            // 1. حساب عرض الكلمات لمنع القص الجانبي للـ PNG
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-
-                            // 2. حساب عرض الكلمات لمنع القص من الجوانب
                             const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
                             const compWidth = compText ? ctx.measureText(compText).width : 0;
                             const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
                             const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
 
-                            // 3. حساب الهوامش العلوية والسفلية ديناميكياً لتفادي القص
-                            let extraTop = 20; // هامش آمن أساسي
+                            // 2. حساب الهوامش العلوية والسفلية حسب عدد الأسطر وحجم الخط
+                            let extraTop = 20; 
                             if (guestName) extraTop += fontSize + 15;
                             if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
 
-                            let extraBottom = 20; // هامش آمن أساسي
+                            let extraBottom = 20; 
                             if (!guestName) extraBottom += fontSize + 15;
                             if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
                             
-                            // 4. تعيين العرض والطول ليتمدد تلقائياً مع الكلام (نأخذ الأعرض)
+                            // 3. أبعاد الـ Canvas تتمدد تلقائياً لتبقى خفيفة ومناسبة للحجم المطلوب
                             canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
                             canvas.height = qrSize + extraTop + extraBottom;
 
-                            const drawX = (canvas.width - qrSize) / 2; // توسيط الباركود
+                            const drawX = (canvas.width - qrSize) / 2; 
                             const drawY = extraTop; 
                             const centerX = canvas.width / 2;
 
-                            // رسم الباركود في مكانه الجديد
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
-                            // تجهيز إعدادات رسم النصوص
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
                             
-                            // رسم النص العلوي (مع رفع نقطة الارتكاز لعدم التداخل)
                             let currentTopY = drawY - 15;
                             ctx.textBaseline = 'bottom';
                             if (companionsPos === 'top' && compText) {
@@ -831,7 +862,6 @@
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
-                            // رسم النص السفلي
                             let currentBottomY = drawY + qrSize + 15;
                             ctx.textBaseline = 'top';
                             
@@ -844,7 +874,7 @@
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
-                            // تحويل النتيجة وبقاء الخلفية شفافة
+                            // حفظ الصورة بصيغة PNG مفرغة سليمة ونقية
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
@@ -900,7 +930,7 @@
                     } else { 
                         imageBlob = await generateQROnlyBlob(code, ticketNum, guestName, companionsCount, companionsPos); 
                         ext = 'png';
-                        mimeType = 'image/png';
+                        mimeType = 'image/png'; // أبقينا على المايم تايب PNG الرسمي
                     }
                     
                     const filePath = `${currentUser.id}/${code}.${ext}`;
@@ -971,7 +1001,12 @@
 
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10 shadow-sm">
-                <div class="flex items-center justify-between w-full px-1 pt-2 pb-2">
+                
+                <button onclick="downloadSingleTicket('${ticket.code}')" class="absolute top-2 left-3 bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 text-xs px-2.5 py-1 rounded-lg shadow-sm z-10 transition flex items-center gap-1 font-bold" title="تحميل PNG متوافق مع كانفا">
+                    ⬇️ حفظ PNG
+                </button>
+
+                <div class="flex items-center justify-between w-full px-1 pt-8 pb-2">
                     <div class="flex items-center gap-1">
                         <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono">${ticket.code}</span>
                         ${compBadge}
@@ -980,7 +1015,7 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${jpgUrl}" onerror="this.onerror=null; this.src='${pngUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
+                    <img id="combined-img-${ticket.code}" src="${pngUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
@@ -1041,15 +1076,15 @@
                 const ticketCode = cb.dataset.ticketCode;
                 const ticketNumber = cb.dataset.ticketNumber;
                 
-                const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
                 const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
+                const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
                 const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.webp`).data.publicUrl;
                 
                 try {
-                    let response = await fetch(jpgUrl);
-                    let finalType = 'image/jpeg'; let extension = 'jpg';
+                    let response = await fetch(pngUrl);
+                    let finalType = 'image/png'; let extension = 'png';
                     if (!response.ok) { 
-                        response = await fetch(pngUrl); finalType = 'image/png'; extension = 'png';
+                        response = await fetch(jpgUrl); finalType = 'image/jpeg'; extension = 'jpg';
                         if (!response.ok) { response = await fetch(webpUrl); finalType = 'image/webp'; extension = 'webp'; }
                     }
                     const blob = await response.blob();
@@ -1071,8 +1106,8 @@
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
                     const filesToDelete = Array.from(checkboxes).flatMap(cb => [
-                        `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.png`,
+                        `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.webp`
                     ]);
                     
