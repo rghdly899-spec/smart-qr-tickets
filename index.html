@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -16,7 +15,6 @@
         #canvasWrapper { touch-action: none; }
         #invitationCanvas { max-width: 100%; cursor: crosshair; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
-        /* تعديل المربع الوهمي (الظل) */
         #selectionMarker { 
             position: absolute; 
             border: 1px dashed rgba(126, 34, 206, 0.4); 
@@ -31,6 +29,13 @@
         input[type="color"] { -webkit-appearance: none; border: none; border-radius: 8px; padding: 0; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+
+        /* إخفاء أسهم الأرقام لترتيب شكل مربعات (من - إلى) */
+        input[type="number"].hide-arrows::-webkit-inner-spin-button, 
+        input[type="number"].hide-arrows::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
 
         .toast-enter { transform: translateY(-100%); opacity: 0; }
         .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -62,15 +67,23 @@
 
     <div id="folderModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-2 md:p-6 backdrop-blur-sm transition-all">
         <div class="bg-white w-full max-w-5xl h-[95vh] md:h-[85vh] flex flex-col rounded-2xl relative shadow-2xl overflow-hidden">
-            <div class="p-5 md:p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50 shrink-0">
-                <div class="flex items-center gap-3 w-full md:w-auto mt-8 md:mt-0">
-                    <button onclick="closeFolder()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 text-lg md:text-xl transition bg-white border rounded-full h-8 w-8 flex items-center justify-center shadow-sm">✖</button>
+            <div class="p-5 md:p-6 border-b flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-gray-50 shrink-0">
+                <div class="flex items-center gap-3 w-full xl:w-auto mt-8 xl:mt-0">
+                    <button onclick="closeFolder()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 text-lg transition bg-white border rounded-full h-8 w-8 flex items-center justify-center shadow-sm">✖</button>
                     <h2 id="modalTitle" class="text-xl md:text-2xl font-bold text-purple-800 truncate max-w-[250px] md:max-w-md"></h2>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                    <button onclick="toggleSelectAll()" id="selectAllBtn" class="flex-1 md:flex-none bg-white text-gray-700 text-xs font-bold px-3 py-2.5 rounded-xl transition border border-gray-200 shadow-sm hover:bg-gray-100">تحديد الكل</button>
-                    <button onclick="shareSelectedTicketsGroup()" class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex justify-center items-center gap-1.5">📤 مشاركة</button>
+                <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                    <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1.5 shadow-sm mr-auto xl:mr-0">
+                        <span class="text-xs text-gray-600 font-bold">من:</span>
+                        <input type="number" id="selectFrom" min="1" class="w-10 h-7 text-xs border border-gray-300 rounded focus:outline-none focus:border-purple-500 text-center hide-arrows bg-gray-50">
+                        <span class="text-xs text-gray-600 font-bold">إلى:</span>
+                        <input type="number" id="selectTo" min="1" class="w-10 h-7 text-xs border border-gray-300 rounded focus:outline-none focus:border-purple-500 text-center hide-arrows bg-gray-50">
+                        <button onclick="selectRange()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold px-2 py-1.5 rounded-lg transition mr-1">تحديد</button>
+                    </div>
+
+                    <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-white text-gray-700 text-xs font-bold px-3 py-2.5 rounded-xl transition border border-gray-200 shadow-sm hover:bg-gray-100">تحديد الكل</button>
+                    <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex justify-center items-center gap-1.5">📤 مشاركة</button>
                     <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف</button>
                 </div>
             </div>
@@ -165,10 +178,14 @@
                     </div>
                     <div class="relative inline-block mt-2 w-full" id="canvasContainer">
                         <p id="mapInstruction" class="text-xs text-purple-600 mb-2 font-bold hidden animate-pulse">💡 ممتاز! اسحب بإصبعك لتحديد المكان، وكبّر أو صغّر من النقطة الحمراء أو بإصبعين</p>
-                        <div class="relative inline-block" id="canvasWrapper">
+                        <div class="relative inline-block overflow-hidden rounded-xl" id="canvasWrapper">
                             <canvas id="invitationCanvas" class="hidden"></canvas>
+                            
+                            <div id="guideLineX" class="absolute w-full h-[2px] bg-purple-500 z-[6] hidden pointer-events-none opacity-80" style="top: 50%; transform: translateY(-50%); left: 0;"></div>
+                            <div id="guideLineY" class="absolute h-full w-[2px] bg-purple-500 z-[6] hidden pointer-events-none opacity-80" style="left: 50%; transform: translateX(-50%); top: 0;"></div>
+
                             <div id="selectionMarker">
-                                <div id="previewTopText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-end" style="bottom: 100%; margin-bottom: 5px;"></div>
+                                <div id="previewTopText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-end whitespace-nowrap" style="bottom: 100%; margin-bottom: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
                                 
                                 <svg id="previewQrImg" class="w-full h-full opacity-60 pointer-events-none transition-colors duration-200" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                     <rect x="5" y="5" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -183,7 +200,7 @@
                                     <rect x="80" y="65" width="15" height="15"/>
                                 </svg>
                                 
-                                <div id="previewBottomText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-start" style="top: 100%; margin-top: 5px;"></div>
+                                <div id="previewBottomText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-start whitespace-nowrap" style="top: 100%; margin-top: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
                                 
                                 <div id="resizeHandle"></div>
                             </div>
@@ -484,17 +501,64 @@
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            rawImageX = (clientX - rect.left) * (canvas.width / rect.width);
-            rawImageY = (clientY - rect.top) * (canvas.height / rect.height);
+            
+            let targetX = (clientX - rect.left) * (canvas.width / rect.width);
+            let targetY = (clientY - rect.top) * (canvas.height / rect.height);
+            
+            const SNAP_THRESHOLD = 30;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const guideX = document.getElementById('guideLineX');
+            const guideY = document.getElementById('guideLineY');
+
+            if (Math.abs(targetX - centerX) < SNAP_THRESHOLD) {
+                targetX = centerX;
+                guideY.style.display = 'block';
+            } else {
+                guideY.style.display = 'none';
+            }
+
+            if (Math.abs(targetY - centerY) < SNAP_THRESHOLD) {
+                targetY = centerY;
+                guideX.style.display = 'block';
+            } else {
+                guideX.style.display = 'none';
+            }
+
+            rawImageX = targetX;
+            rawImageY = targetY;
             updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
+        }
+
+        function hideGuides() {
+            const gX = document.getElementById('guideLineX');
+            const gY = document.getElementById('guideLineY');
+            if(gX) gX.style.display = 'none';
+            if(gY) gY.style.display = 'none';
         }
 
         canvas.addEventListener('mousedown', (e) => { if (isResizingMarker) return; isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); });
         window.addEventListener('mousemove', (e) => { if (isDraggingMarker) moveMarker(e); });
-        window.addEventListener('mouseup', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
+        
+        window.addEventListener('mouseup', () => { 
+            if (isDraggingMarker) { 
+                isDraggingMarker = false; 
+                selectionMarker.style.transition = 'all 0.2s ease-out'; 
+                hideGuides();
+            } 
+        });
+        
         canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1 && !isResizingMarker) { isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); } }, {passive: false});
         canvas.addEventListener('touchmove', (e) => { if (isDraggingMarker && e.touches.length === 1) { e.preventDefault(); moveMarker(e); } }, {passive: false});
-        window.addEventListener('touchend', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
+        
+        window.addEventListener('touchend', () => { 
+            if (isDraggingMarker) { 
+                isDraggingMarker = false; 
+                selectionMarker.style.transition = 'all 0.2s ease-out'; 
+                hideGuides();
+            } 
+        });
 
         function startResize(e) { e.preventDefault(); e.stopPropagation(); isResizingMarker = true; resizeStartX = e.touches ? e.touches[0].clientX : e.clientX; resizeStartSize = parseInt(qrSizeInput.value); selectionMarker.style.transition = 'none'; }
         function doResize(e) {
@@ -633,10 +697,8 @@
                         clearInterval(checkReady);
                         
                         setTimeout(() => {
-                            const canvas = document.createElement('canvas'); 
-                            canvas.width = originalInviteImage.width; 
-                            canvas.height = originalInviteImage.height;
-                            const ctx = canvas.getContext('2d');
+                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                            canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
                             
                             ctx.drawImage(originalInviteImage, 0, 0);
                             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
@@ -684,7 +746,6 @@
             });
         }
 
-        // دالة التوليد المعدلة بالكامل والآمنة من أخطاء الـ Meta المسببة لرفض كانفا
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -717,77 +778,73 @@
                         clearInterval(checkReady);
                         
                         setTimeout(() => {
+                            const canvas = document.createElement('canvas'); 
+                            const ctx = canvas.getContext('2d');
                             const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
                             const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
-                            // الخطوة السحرية: ننشئ كانفاس وهمي ومؤقت "فقط" لحساب قياسات النص بأمان بدون لمس الكانفاس الحقيقي
-                            const dummyCanvas = document.createElement('canvas');
-                            const dummyCtx = dummyCanvas.getContext('2d');
-                            dummyCtx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+                            // 1. تحديد الخط أولاً عشان نقيس الأبعاد بدقة
+                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
+
+                            // 2. حساب عرض الكلمات لمنع القص من الجوانب
+                            const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
+                            const compWidth = compText ? ctx.measureText(compText).width : 0;
+                            const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
+                            const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
+
+                            // 3. حساب الهوامش العلوية والسفلية ديناميكياً لتفادي القص
+                            let extraTop = 20; // هامش آمن أساسي
+                            if (guestName) extraTop += fontSize + 15;
+                            if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
+
+                            let extraBottom = 20; // هامش آمن أساسي
+                            if (!guestName) extraBottom += fontSize + 15;
+                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
                             
-                            let maxTextWidth = 0;
-                            if (guestName) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(guestName).width);
-                            if (compText) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(compText).width);
-                            if (!guestName) maxTextWidth = Math.max(maxTextWidth, dummyCtx.measureText(arabicNumber).width);
+                            // 4. تعيين العرض والطول ليتمدد تلقائياً مع الكلام (نأخذ الأعرض)
+                            canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
+                            canvas.height = qrSize + extraTop + extraBottom;
 
-                            // حساب الأبعاد المطلوبة كرقم صحيح ثابت
-                            const finalWidth = Math.ceil(Math.max(qrSize + 40, maxTextWidth + 60));
+                            const drawX = (canvas.width - qrSize) / 2; // توسيط الباركود
+                            const drawY = extraTop; 
+                            const centerX = canvas.width / 2;
 
-                            let extraTop = 20; 
-                            if (guestName) extraTop += fontSize + 10;
-                            if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
-
-                            let extraBottom = 20; 
-                            if (!guestName) extraBottom += fontSize + 5;
-                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
-                            
-                            const finalHeight = qrSize + extraTop + extraBottom;
-
-                            // الآن ننشئ الكانفاس الحقيقي ونثبت أبعاده "قبل" طلب الـ context لمنع تلف الملف
-                            const canvas = document.createElement('canvas');
-                            canvas.width = finalWidth;
-                            canvas.height = finalHeight;
-                            
-                            const ctx = canvas.getContext('2d');
-
-                            const drawX = Math.floor((finalWidth - qrSize) / 2); 
-                            const drawY = Math.floor(extraTop); 
-                            const centerX = Math.floor(finalWidth / 2);
-
-                            // رسم الباركود بأمان
+                            // رسم الباركود في مكانه الجديد
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
-                            // إعداد رسم النصوص على أبعاد صحيحة مستقرة
+                            // تجهيز إعدادات رسم النصوص
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
                             
+                            // رسم النص العلوي (مع رفع نقطة الارتكاز لعدم التداخل)
                             let currentTopY = drawY - 15;
                             ctx.textBaseline = 'bottom';
                             if (companionsPos === 'top' && compText) {
                                 ctx.fillText(compText, centerX, currentTopY);
-                                currentTopY -= (fontSize + 5);
+                                currentTopY -= (fontSize + 10);
                             }
                             if (guestName) {
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
+                            // رسم النص السفلي
                             let currentBottomY = drawY + qrSize + 15;
                             ctx.textBaseline = 'top';
                             
                             if (!guestName) {
                                 ctx.fillText(arabicNumber, centerX, currentBottomY);
-                                currentBottomY += (fontSize + 5);
+                                currentBottomY += (fontSize + 10);
                             }
 
                             if (companionsPos === 'bottom' && compText) {
                                 ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
-                            // تصدير ملف PNG معياري ونظيف ومستقر يقبله نظام كانفا فوراً
+                            // تحويل النتيجة وبقاء الخلفية شفافة
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
@@ -923,7 +980,7 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${pngUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
+                    <img id="combined-img-${ticket.code}" src="${jpgUrl}" onerror="this.onerror=null; this.src='${pngUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
@@ -936,6 +993,38 @@
             for(let cb of checkboxes) { if(!cb.checked) { allSelected = true; break; } }
             checkboxes.forEach(cb => cb.checked = allSelected);
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
+        }
+
+        function selectRange() {
+            const fromVal = parseInt(document.getElementById('selectFrom').value);
+            const toVal = parseInt(document.getElementById('selectTo').value);
+            
+            if (isNaN(fromVal) || isNaN(toVal) || fromVal > toVal) {
+                showToast("الرجاء إدخال نطاق أرقام صحيح (مثال: من 30 إلى 40)", "warning");
+                return;
+            }
+
+            const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]');
+            let foundAny = false;
+            let countSelected = 0;
+
+            checkboxes.forEach(cb => {
+                const ticketNum = parseInt(cb.dataset.ticketNumber);
+                if (ticketNum >= fromVal && ticketNum <= toVal) {
+                    cb.checked = true;
+                    foundAny = true;
+                    countSelected++;
+                } else {
+                    cb.checked = false; 
+                }
+            });
+
+            if (foundAny) {
+                showToast(`تم تحديد (${countSelected}) تذاكر من ${fromVal} إلى ${toVal} بنجاح ✅`, "success");
+                document.getElementById('selectAllBtn').innerText = "تحديد الكل"; 
+            } else {
+                showToast("لم يتم العثور على تذاكر في هذا النطاق", "warning");
+            }
         }
 
         async function shareSelectedTicketsGroup() {
