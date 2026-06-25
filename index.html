@@ -223,7 +223,7 @@
                         <input type="number" id="companionsInput" value="0" min="0" class="border rounded-xl px-2 py-2 w-16 text-center focus:outline-none focus:border-purple-500 font-bold bg-gray-50 shrink-0" oninput="triggerShadowUpdate()">
                         
                         <select id="companionsFormat" class="border rounded-xl px-2 py-2 text-sm focus:outline-none focus:border-purple-500 bg-gray-50 font-semibold flex-1 min-w-[140px]" onchange="triggerShadowUpdate()">
-                            <option value="companions">صيغة: عدد المرافقين / X </option>
+                            <option value="companions">صيغة: عدد المرافقين / X</option>
                             <option value="includes">صيغة: الدعوة تشمل (X) أشخاص</option>
                         </select>
 
@@ -292,7 +292,6 @@
         let allTicketsData = []; 
         let currentActiveFolder = null;
 
-        // دالة البحث المضافة
         function searchFolderTickets() {
             const searchVal = document.getElementById('ticketSearchInput').value.toLowerCase();
             const cards = document.getElementById('modalTicketsGrid').children;
@@ -477,7 +476,7 @@
             const guestName = namesArray[0] || 'الاسم (معاينة)';
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
             const companionsPos = document.getElementById('companionsPos').value;
-            const compFormat = document.getElementById('companionsFormat').value; // جلب الصيغة
+            const compFormat = document.getElementById('companionsFormat').value; 
             
             const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
             const realFontSize = Math.max(14, Math.floor(selectionWidth * fontRatio));
@@ -493,12 +492,12 @@
             bottomTextEl.style.fontSize = displayFontSize + 'px';
             qrImgEl.style.color = color;
 
-            // تطبيق صيغة المرافقين وتعديل الأقواس
+            // إزالة الأقواس من صيغة عدد المرافقين والإبقاء عليها في الدعوة تشمل
             let compText = "";
             if (companionsCount > 0) {
                 compText = compFormat === 'includes' 
                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
-                    : `عدد المرافقين / (${convertToArabicNumbers(companionsCount)})`;
+                    : `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}`;
             }
             
             const numText = !namesArray.length ? convertToArabicNumbers(1) : ""; 
@@ -679,7 +678,6 @@
             const modal = document.getElementById('folderModal');
             document.getElementById('modalTitle').innerText = '📁 ' + eventName;
             
-            // تصفير شريط البحث عند فتح المجلد
             const searchInput = document.getElementById('ticketSearchInput');
             if(searchInput) searchInput.value = '';
 
@@ -750,12 +748,12 @@
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            // تعديل صيغة الأقواس
+                            // إزالة الأقواس من عدد المرافقين
                             let compText = "";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
-                                    : `عدد المرافقين / (${convertToArabicNumbers(companionsCount)})`;
+                                    : `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}`;
                             }
                             
                             let currentTopY = selectedY - 10;
@@ -829,12 +827,12 @@
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            // تعديل صيغة الأقواس
+                            // إزالة الأقواس من عدد المرافقين
                             let compText = "";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
-                                    : `عدد المرافقين / (${convertToArabicNumbers(companionsCount)})`;
+                                    : `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}`;
                             }
 
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
@@ -910,7 +908,7 @@
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
             const companionsPos = document.getElementById('companionsPos').value;
-            const compFormat = document.getElementById('companionsFormat').value; // جلب الصيغة
+            const compFormat = document.getElementById('companionsFormat').value;
 
             if (mode === 'merged' && !originalInviteImage) { showToast("الرجاء تحميل تصميم الدعوة أولاً! 🖼️", 'warning'); return; }
             if (mode === 'merged' && document.getElementById('selectionMarker').style.display === 'none') { showToast("💡 اضغط على الصورة لاختيار مكان الباركود أولاً!", 'warning'); return; }
@@ -924,11 +922,13 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                // الترقيم دائماً يبدأ من 1 مع كل دفعة جديدة
                 let startIndex = 1;
 
                 const processSingleTicket = async (loopIndex) => {
-                    const code = 'INV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    // التعديل هنا: نغير بداية الكود عشان شاشة الفحص تعرف الصيغة
+                    const codePrefix = compFormat === 'includes' ? 'INC-' : 'COM-';
+                    const code = codePrefix + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    
                     const guestName = namesArray[loopIndex] || null; 
                     const ticketNum = startIndex + loopIndex; 
 
@@ -1137,9 +1137,17 @@
                 
                 const guestNameText = data.guest_name ? `<div class="text-indigo-700 mt-3 text-2xl font-black bg-white/50 py-2 rounded-xl border border-indigo-200">باسم: ${data.guest_name}</div>` : '';
                 
-                // تعديل نص التحقق ليتوافق مع المطلوب
+                // قراءة الصيغة من الكود وتطبيقها
                 const arabicCompCount = convertToArabicNumbers(data.companions_count);
-                const companionsText = (data.companions_count > 0) ? `<div class="text-sm font-bold text-gray-600 bg-gray-100 rounded-lg px-4 py-2 inline-block mt-3 border border-gray-200 shadow-sm">الدعوة تشمل (${arabicCompCount}) أشخاص 👥</div>` : '';
+                let compString = '';
+                
+                if (code.startsWith('INC-')) {
+                    compString = `الدعوة تشمل (${arabicCompCount}) أشخاص`;
+                } else if (code.startsWith('COM-') || data.companions_count > 0) {
+                    compString = `عدد المرافقين / ${arabicCompCount}`;
+                }
+
+                const companionsText = (data.companions_count > 0) ? `<div class="text-sm font-bold text-gray-600 bg-gray-100 rounded-lg px-4 py-2 inline-block mt-3 border border-gray-200 shadow-sm">${compString} 👥</div>` : '';
 
                 if (data.is_used === false) {
                     await supabaseClient.from('tickets').update({ is_used: true, scanned_at: new Date().toISOString() }).eq('code', code);
