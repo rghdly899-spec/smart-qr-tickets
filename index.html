@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -15,6 +16,7 @@
         #canvasWrapper { touch-action: none; }
         #invitationCanvas { max-width: 100%; cursor: crosshair; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
+        /* تعديل المربع الوهمي (الظل) */
         #selectionMarker { 
             position: absolute; 
             border: 1px dashed rgba(126, 34, 206, 0.4); 
@@ -29,12 +31,6 @@
         input[type="color"] { -webkit-appearance: none; border: none; border-radius: 8px; padding: 0; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
-
-        input[type="number"].hide-arrows::-webkit-inner-spin-button, 
-        input[type="number"].hide-arrows::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
 
         .toast-enter { transform: translateY(-100%); opacity: 0; }
         .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -66,23 +62,15 @@
 
     <div id="folderModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-2 md:p-6 backdrop-blur-sm transition-all">
         <div class="bg-white w-full max-w-5xl h-[95vh] md:h-[85vh] flex flex-col rounded-2xl relative shadow-2xl overflow-hidden">
-            <div class="p-5 md:p-6 border-b flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-gray-50 shrink-0">
-                <div class="flex items-center gap-3 w-full xl:w-auto mt-8 xl:mt-0">
-                    <button onclick="closeFolder()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 text-lg transition bg-white border rounded-full h-8 w-8 flex items-center justify-center shadow-sm">✖</button>
+            <div class="p-5 md:p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50 shrink-0">
+                <div class="flex items-center gap-3 w-full md:w-auto mt-8 md:mt-0">
+                    <button onclick="closeFolder()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500 text-lg md:text-xl transition bg-white border rounded-full h-8 w-8 flex items-center justify-center shadow-sm">✖</button>
                     <h2 id="modalTitle" class="text-xl md:text-2xl font-bold text-purple-800 truncate max-w-[250px] md:max-w-md"></h2>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-                    <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1.5 shadow-sm mr-auto xl:mr-0">
-                        <span class="text-xs text-gray-600 font-bold">من:</span>
-                        <input type="number" id="selectFrom" min="1" class="w-10 h-7 text-xs border border-gray-300 rounded focus:outline-none focus:border-purple-500 text-center hide-arrows bg-gray-50">
-                        <span class="text-xs text-gray-600 font-bold">إلى:</span>
-                        <input type="number" id="selectTo" min="1" class="w-10 h-7 text-xs border border-gray-300 rounded focus:outline-none focus:border-purple-500 text-center hide-arrows bg-gray-50">
-                        <button onclick="selectRange()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold px-2 py-1.5 rounded-lg transition mr-1">تحديد</button>
-                    </div>
-
-                    <button onclick="toggleSelectAll()" id="selectAllBtn" class="bg-white text-gray-700 text-xs font-bold px-3 py-2.5 rounded-xl transition border border-gray-200 shadow-sm hover:bg-gray-100">تحديد الكل</button>
-                    <button onclick="shareSelectedTicketsGroup()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex justify-center items-center gap-1.5">📤 مشاركة</button>
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <button onclick="toggleSelectAll()" id="selectAllBtn" class="flex-1 md:flex-none bg-white text-gray-700 text-xs font-bold px-3 py-2.5 rounded-xl transition border border-gray-200 shadow-sm hover:bg-gray-100">تحديد الكل</button>
+                    <button onclick="shareSelectedTicketsGroup()" class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow flex justify-center items-center gap-1.5">📤 مشاركة</button>
                     <button onclick="deleteSelectedTickets()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow">🗑️ حذف</button>
                 </div>
             </div>
@@ -177,14 +165,10 @@
                     </div>
                     <div class="relative inline-block mt-2 w-full" id="canvasContainer">
                         <p id="mapInstruction" class="text-xs text-purple-600 mb-2 font-bold hidden animate-pulse">💡 ممتاز! اسحب بإصبعك لتحديد المكان، وكبّر أو صغّر من النقطة الحمراء أو بإصبعين</p>
-                        <div class="relative inline-block overflow-hidden rounded-xl" id="canvasWrapper">
+                        <div class="relative inline-block" id="canvasWrapper">
                             <canvas id="invitationCanvas" class="hidden"></canvas>
-                            
-                            <div id="guideLineX" class="absolute w-full h-[2px] bg-purple-500 z-[6] hidden pointer-events-none opacity-80" style="top: 50%; transform: translateY(-50%); left: 0;"></div>
-                            <div id="guideLineY" class="absolute h-full w-[2px] bg-purple-500 z-[6] hidden pointer-events-none opacity-80" style="left: 50%; transform: translateX(-50%); top: 0;"></div>
-
                             <div id="selectionMarker">
-                                <div id="previewTopText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-end whitespace-nowrap" style="bottom: 100%; margin-bottom: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
+                                <div id="previewTopText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-end" style="bottom: 100%; margin-bottom: 5px;"></div>
                                 
                                 <svg id="previewQrImg" class="w-full h-full opacity-60 pointer-events-none transition-colors duration-200" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                     <rect x="5" y="5" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -199,7 +183,7 @@
                                     <rect x="80" y="65" width="15" height="15"/>
                                 </svg>
                                 
-                                <div id="previewBottomText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-start whitespace-nowrap" style="top: 100%; margin-top: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
+                                <div id="previewBottomText" class="absolute w-[300%] left-[-100%] text-center font-bold pointer-events-none flex flex-col justify-start" style="top: 100%; margin-top: 5px;"></div>
                                 
                                 <div id="resizeHandle"></div>
                             </div>
@@ -423,6 +407,7 @@
             reader.readAsDataURL(file);
         });
 
+        // دوال التحكم بالمعاينة (الظل) 
         function updateMarkerDisplay(rect, scaleX, scaleY) {
             if (rawImageX === 0 && rawImageY === 0) return;
             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
@@ -500,64 +485,17 @@
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            let targetX = (clientX - rect.left) * (canvas.width / rect.width);
-            let targetY = (clientY - rect.top) * (canvas.height / rect.height);
-            
-            const SNAP_THRESHOLD = 30;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            const guideX = document.getElementById('guideLineX');
-            const guideY = document.getElementById('guideLineY');
-
-            if (Math.abs(targetX - centerX) < SNAP_THRESHOLD) {
-                targetX = centerX;
-                guideY.style.display = 'block';
-            } else {
-                guideY.style.display = 'none';
-            }
-
-            if (Math.abs(targetY - centerY) < SNAP_THRESHOLD) {
-                targetY = centerY;
-                guideX.style.display = 'block';
-            } else {
-                guideX.style.display = 'none';
-            }
-
-            rawImageX = targetX;
-            rawImageY = targetY;
+            rawImageX = (clientX - rect.left) * (canvas.width / rect.width);
+            rawImageY = (clientY - rect.top) * (canvas.height / rect.height);
             updateMarkerDisplay(rect, canvas.width / rect.width, canvas.height / rect.height);
-        }
-
-        function hideGuides() {
-            const gX = document.getElementById('guideLineX');
-            const gY = document.getElementById('guideLineY');
-            if(gX) gX.style.display = 'none';
-            if(gY) gY.style.display = 'none';
         }
 
         canvas.addEventListener('mousedown', (e) => { if (isResizingMarker) return; isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); });
         window.addEventListener('mousemove', (e) => { if (isDraggingMarker) moveMarker(e); });
-        
-        window.addEventListener('mouseup', () => { 
-            if (isDraggingMarker) { 
-                isDraggingMarker = false; 
-                selectionMarker.style.transition = 'all 0.2s ease-out'; 
-                hideGuides();
-            } 
-        });
-        
+        window.addEventListener('mouseup', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
         canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1 && !isResizingMarker) { isDraggingMarker = true; selectionMarker.style.transition = 'none'; moveMarker(e); } }, {passive: false});
         canvas.addEventListener('touchmove', (e) => { if (isDraggingMarker && e.touches.length === 1) { e.preventDefault(); moveMarker(e); } }, {passive: false});
-        
-        window.addEventListener('touchend', () => { 
-            if (isDraggingMarker) { 
-                isDraggingMarker = false; 
-                selectionMarker.style.transition = 'all 0.2s ease-out'; 
-                hideGuides();
-            } 
-        });
+        window.addEventListener('touchend', () => { if (isDraggingMarker) { isDraggingMarker = false; selectionMarker.style.transition = 'all 0.2s ease-out'; } });
 
         function startResize(e) { e.preventDefault(); e.stopPropagation(); isResizingMarker = true; resizeStartX = e.touches ? e.touches[0].clientX : e.clientX; resizeStartSize = parseInt(qrSizeInput.value); selectionMarker.style.transition = 'none'; }
         function doResize(e) {
@@ -687,14 +625,15 @@
                     
                     let qrSource = null;
                     if (qrCanvas && qrCanvas.width > 0) {
-                        qrSource = qrCanvas; 
+                        qrSource = qrCanvas; // نستخدم الكانفاس لأنه أسرع ومضمون
                     } else if (img && img.src && img.complete && img.naturalWidth > 0) {
-                        qrSource = img; 
+                        qrSource = img; // كخطة بديلة نستخدم الصورة بعد ما نتأكد إنها اكتملت تماماً
                     }
                     
                     if (qrSource) {
                         clearInterval(checkReady);
                         
+                        // تأخير بسيط لضمان اكتمال الاستيعاب من المتصفح قبل الدمج
                         setTimeout(() => {
                             const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                             canvas.width = originalInviteImage.width; canvas.height = originalInviteImage.height;
@@ -745,7 +684,7 @@
             });
         }
 
-        // التعديل هنا: إجبار المتصفح على استخدام أرقام صحيحة (Math.ceil) لمنع تشوه الصورة
+        // التعديل الآمن في دالة الباركود المفرغ
         function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -778,37 +717,39 @@
                         clearInterval(checkReady);
                         
                         setTimeout(() => {
-                            const canvas = document.createElement('canvas'); 
-                            const ctx = canvas.getContext('2d');
+                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                             const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
                             const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             const compText = companionsCount > 0 ? `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}` : "";
 
+                            // 1. حساب عرض النص لمنع القص الجانبي
                             ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-                            
-                            // استخدام Math.ceil هنا أساسي لمنع الفواصل والأعشار اللي تخرب الملف على كانفا
-                            const nameWidth = guestName ? Math.ceil(ctx.measureText(guestName).width) : 0;
-                            const compWidth = compText ? Math.ceil(ctx.measureText(compText).width) : 0;
-                            const numWidth = (!guestName) ? Math.ceil(ctx.measureText(arabicNumber).width) : 0;
-                            const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
+                            let maxTextWidth = 0;
+                            if (guestName) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(guestName).width);
+                            if (compText) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(compText).width);
+                            if (!guestName) maxTextWidth = Math.max(maxTextWidth, ctx.measureText(arabicNumber).width);
 
-                            let extraTop = 20; 
-                            if (guestName) extraTop += fontSize + 15;
-                            if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
+                            // 2. تعيين العرض بناءً على النص، مع استخدام Math.ceil لتجنب الفواصل
+                            const newCanvasWidth = Math.max(qrSize + 40, Math.ceil(maxTextWidth) + 60);
+
+                            // 3. إضافة هوامش إضافية (20 بيكسل) لمنع قص الحركات العلوية للخط
+                            let extraTop = 20;
+                            if (guestName) extraTop += fontSize + 10;
+                            if (companionsPos === 'top' && compText) extraTop += fontSize + 10;
 
                             let extraBottom = 20; 
-                            if (!guestName) extraBottom += fontSize + 15;
-                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
+                            if (!guestName) extraBottom += fontSize + 5;
+                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 5;
                             
-                            // إجبار الأبعاد تكون رقم صحيح بدون فواصل
-                            canvas.width = Math.ceil(Math.max(qrSize + 60, maxTextWidth + 80)); 
-                            canvas.height = Math.ceil(qrSize + extraTop + extraBottom);
+                            canvas.width = newCanvasWidth; 
+                            canvas.height = qrSize + extraTop + extraBottom;
 
-                            const drawX = Math.ceil((canvas.width - qrSize) / 2); 
-                            const drawY = Math.ceil(extraTop); 
-                            const centerX = Math.ceil(canvas.width / 2);
+                            // 4. استخدام Math.floor لمنع الفواصل في الإحداثيات (السبب الرئيسي لرفض كانفا)
+                            const drawX = Math.floor((newCanvasWidth - qrSize) / 2); 
+                            const drawY = Math.floor(extraTop); 
+                            const centerX = Math.floor(newCanvasWidth / 2);
 
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
@@ -820,7 +761,7 @@
                             ctx.textBaseline = 'bottom';
                             if (companionsPos === 'top' && compText) {
                                 ctx.fillText(compText, centerX, currentTopY);
-                                currentTopY -= (fontSize + 10);
+                                currentTopY -= (fontSize + 5);
                             }
                             if (guestName) {
                                 ctx.fillText(guestName, centerX, currentTopY);
@@ -831,7 +772,7 @@
                             
                             if (!guestName) {
                                 ctx.fillText(arabicNumber, centerX, currentBottomY);
-                                currentBottomY += (fontSize + 10);
+                                currentBottomY += (fontSize + 5);
                             }
 
                             if (companionsPos === 'bottom' && compText) {
@@ -964,7 +905,6 @@
 
             card.innerHTML = `
                 <input type="checkbox" name="ticketSelect" value="${ticket.id}" data-ticket-code="${ticket.code}" data-ticket-number="${indexNumber}" class="absolute top-3 right-3 w-5 h-5 rounded border-gray-300 z-10 shadow-sm">
-                
                 <div class="flex items-center justify-between w-full px-1 pt-2 pb-2">
                     <div class="flex items-center gap-1">
                         <span class="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono">${ticket.code}</span>
@@ -974,7 +914,7 @@
                 </div>
                 ${guestBadge}
                 <div class="bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner w-full flex justify-center items-center relative overflow-hidden group" style="background-image: repeating-linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), repeating-linear-gradient(45deg, #e5e7eb 25%, #f3f4f6 25%, #f3f4f6 75%, #e5e7eb 75%, #e5e7eb); background-position: 0 0, 10px 10px; background-size: 20px 20px;">
-                    <img id="combined-img-${ticket.code}" src="${pngUrl}" onerror="this.onerror=null; this.src='${jpgUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
+                    <img id="combined-img-${ticket.code}" src="${jpgUrl}" onerror="this.onerror=null; this.src='${pngUrl}'; this.onerror=function(){this.onerror=null; this.src='${webpUrl}';};" crossorigin="anonymous" class="w-full h-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" alt="Ticket Image" loading="lazy"/>
                 </div>
                 ${reactivateBtnHtml}
             `;
@@ -987,38 +927,6 @@
             for(let cb of checkboxes) { if(!cb.checked) { allSelected = true; break; } }
             checkboxes.forEach(cb => cb.checked = allSelected);
             document.getElementById('selectAllBtn').innerText = allSelected ? "إلغاء التحديد" : "تحديد الكل";
-        }
-
-        function selectRange() {
-            const fromVal = parseInt(document.getElementById('selectFrom').value);
-            const toVal = parseInt(document.getElementById('selectTo').value);
-            
-            if (isNaN(fromVal) || isNaN(toVal) || fromVal > toVal) {
-                showToast("الرجاء إدخال نطاق أرقام صحيح (مثال: من 30 إلى 40)", "warning");
-                return;
-            }
-
-            const checkboxes = document.getElementById('modalTicketsGrid').querySelectorAll('input[name="ticketSelect"]');
-            let foundAny = false;
-            let countSelected = 0;
-
-            checkboxes.forEach(cb => {
-                const ticketNum = parseInt(cb.dataset.ticketNumber);
-                if (ticketNum >= fromVal && ticketNum <= toVal) {
-                    cb.checked = true;
-                    foundAny = true;
-                    countSelected++;
-                } else {
-                    cb.checked = false; 
-                }
-            });
-
-            if (foundAny) {
-                showToast(`تم تحديد (${countSelected}) تذاكر من ${fromVal} إلى ${toVal} بنجاح ✅`, "success");
-                document.getElementById('selectAllBtn').innerText = "تحديد الكل"; 
-            } else {
-                showToast("لم يتم العثور على تذاكر في هذا النطاق", "warning");
-            }
         }
 
         async function shareSelectedTicketsGroup() {
@@ -1035,15 +943,15 @@
                 const ticketCode = cb.dataset.ticketCode;
                 const ticketNumber = cb.dataset.ticketNumber;
                 
-                const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
                 const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
+                const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
                 const webpUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.webp`).data.publicUrl;
                 
                 try {
-                    let response = await fetch(pngUrl);
-                    let finalType = 'image/png'; let extension = 'png';
+                    let response = await fetch(jpgUrl);
+                    let finalType = 'image/jpeg'; let extension = 'jpg';
                     if (!response.ok) { 
-                        response = await fetch(jpgUrl); finalType = 'image/jpeg'; extension = 'jpg';
+                        response = await fetch(pngUrl); finalType = 'image/png'; extension = 'png';
                         if (!response.ok) { response = await fetch(webpUrl); finalType = 'image/webp'; extension = 'webp'; }
                     }
                     const blob = await response.blob();
@@ -1065,8 +973,8 @@
                 try {
                     const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
                     const filesToDelete = Array.from(checkboxes).flatMap(cb => [
-                        `${currentUser.id}/${cb.dataset.ticketCode}.png`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.jpg`,
+                        `${currentUser.id}/${cb.dataset.ticketCode}.png`,
                         `${currentUser.id}/${cb.dataset.ticketCode}.webp`
                     ]);
                     
