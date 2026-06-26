@@ -498,7 +498,7 @@
             bottomTextEl.style.color = color;
             qrImgEl.style.color = color;
 
-            let compText = "(دعوة شخصية)";
+            let compText = namesArray.length > 0 ? "" : "(دعوة شخصية)";
             if (companionsCount > 0) {
                 compText = compFormat === 'includes' 
                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
@@ -765,7 +765,7 @@
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = "(دعوة شخصية)";
+                            let compText = guestName ? "" : "(دعوة شخصية)";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
@@ -844,7 +844,7 @@
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = "(دعوة شخصية)";
+                            let compText = guestName ? "" : "(دعوة شخصية)";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
