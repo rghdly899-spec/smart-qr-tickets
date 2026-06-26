@@ -30,7 +30,6 @@
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
 
-        /* إخفاء أسهم الأرقام لترتيب شكل مربعات (من - إلى) */
         input[type="number"].hide-arrows::-webkit-inner-spin-button, 
         input[type="number"].hide-arrows::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -163,16 +162,27 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center justify-start">
-                    <div class="flex items-center gap-3 border-l border-gray-300 pl-4">
-                        <label class="text-gray-700 font-semibold text-sm">🎨 لون الباركود والاسم:</label>
+                <div class="flex flex-wrap gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 items-center justify-start">
+                    <div class="flex items-center gap-2 border-l border-gray-300 pl-4">
+                        <label class="text-gray-700 font-semibold text-sm">🎨 اللون:</label>
                         <input type="color" id="qrColorPicker" value="#69493f" class="w-10 h-10 cursor-pointer shadow-sm" oninput="triggerShadowUpdate()">
                     </div>
-                    <div class="flex items-center gap-3">
-                        <label class="text-gray-700 font-semibold text-sm">🔠 حجم الخط (%):</label>
-                        <input type="number" id="fontSizeInput" value="11" min="1" max="100" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
+                    <div class="flex items-center gap-2 border-l border-gray-300 pl-4">
+                        <label class="text-gray-700 font-semibold text-sm">مقاس الباركود:</label>
+                        <input type="number" id="qrSizeInput" value="250" min="50" max="1000" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
                     </div>
-                    <input type="hidden" id="qrSizeInput" value="250">
+                    <div class="flex items-center gap-2 border-l border-gray-300 pl-4">
+                        <label class="text-gray-700 font-semibold text-sm">مقاس الاسم:</label>
+                        <input type="number" id="nameFontSize" value="30" min="10" max="200" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
+                    </div>
+                    <div class="flex items-center gap-2 border-l border-gray-300 pl-4">
+                        <label class="text-gray-700 font-semibold text-sm">مقاس المرافقين:</label>
+                        <input type="number" id="compFontSize" value="20" min="10" max="200" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-gray-700 font-semibold text-sm">مقاس الرقم:</label>
+                        <input type="number" id="numFontSize" value="25" min="10" max="200" class="w-16 h-10 border rounded-xl px-2 text-center focus:outline-none focus:border-purple-500 font-bold shadow-sm" oninput="triggerShadowUpdate()">
+                    </div>
                 </div>
 
                 <div id="designSection" class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all">
@@ -189,7 +199,7 @@
                             <div id="guideLineY" class="absolute h-full w-[2px] bg-purple-500 z-[6] hidden pointer-events-none opacity-80" style="left: 50%; transform: translateX(-50%); top: 0;"></div>
 
                             <div id="selectionMarker">
-                                <div id="previewTopText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-end whitespace-nowrap" style="bottom: 100%; margin-bottom: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
+                                <div id="previewTopText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-end whitespace-nowrap" style="bottom: 100%; margin-bottom: 2px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
                                 
                                 <svg id="previewQrImg" class="w-full h-full opacity-60 pointer-events-none transition-colors duration-200" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                     <rect x="5" y="5" width="30" height="30" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -204,7 +214,7 @@
                                     <rect x="80" y="65" width="15" height="15"/>
                                 </svg>
                                 
-                                <div id="previewBottomText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-start whitespace-nowrap" style="top: 100%; margin-top: 5px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
+                                <div id="previewBottomText" class="absolute text-center font-bold pointer-events-none flex flex-col justify-start whitespace-nowrap" style="top: 100%; margin-top: 2px; left: 50%; transform: translateX(-50%); width: max-content;"></div>
                                 
                                 <div id="resizeHandle"></div>
                             </div>
@@ -225,11 +235,6 @@
                         <select id="companionsFormat" class="border rounded-xl px-2 py-2 text-sm focus:outline-none focus:border-purple-500 bg-gray-50 font-semibold flex-1 min-w-[140px]" onchange="triggerShadowUpdate()">
                             <option value="companions">صيغة: عدد المرافقين / X</option>
                             <option value="includes">صيغة: الدعوة تشمل (X) أشخاص</option>
-                        </select>
-
-                        <select id="companionsPos" class="border rounded-xl px-2 py-2 text-sm focus:outline-none focus:border-purple-500 bg-gray-50 font-semibold flex-1 min-w-[120px]" onchange="triggerShadowUpdate()">
-                            <option value="bottom">تحت الباركود</option>
-                            <option value="top">فوق الباركود</option>
                         </select>
                     </div>
 
@@ -475,12 +480,15 @@
             
             const guestName = namesArray[0] || 'الاسم (معاينة)';
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
-            const companionsPos = document.getElementById('companionsPos').value;
             const compFormat = document.getElementById('companionsFormat').value; 
             
-            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
-            const realFontSize = Math.max(14, Math.floor(selectionWidth * fontRatio));
-            const displayFontSize = realFontSize / scaleX;
+            const nameFontSize = parseInt(document.getElementById('nameFontSize').value) || 30;
+            const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
+            const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
+
+            const displayNameSize = nameFontSize / scaleX;
+            const displayCompSize = compFontSize / scaleX;
+            const displayNumSize = numFontSize / scaleX;
 
             const topTextEl = document.getElementById('previewTopText');
             const bottomTextEl = document.getElementById('previewBottomText');
@@ -488,11 +496,9 @@
 
             topTextEl.style.color = color;
             bottomTextEl.style.color = color;
-            topTextEl.style.fontSize = displayFontSize + 'px';
-            bottomTextEl.style.fontSize = displayFontSize + 'px';
             qrImgEl.style.color = color;
 
-            let compText = "";
+            let compText = "(دعوة شخصية)";
             if (companionsCount > 0) {
                 compText = compFormat === 'includes' 
                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
@@ -502,14 +508,18 @@
             const numText = !namesArray.length ? convertToArabicNumbers(1) : ""; 
 
             let topContent = '';
-            if (companionsPos === 'top' && compText) topContent += `<div>${compText}</div>`;
-            if (guestName !== 'الاسم (معاينة)' || namesArray.length > 0) topContent += `<div>${guestName}</div>`;
-            else if (namesArray.length === 0) topContent += `<div>الاسم (معاينة)</div>`;
+            if (guestName !== 'الاسم (معاينة)' || namesArray.length > 0) {
+                topContent += `<div style="font-size: ${displayNameSize}px; line-height: 1;">${guestName}</div>`;
+            } else if (namesArray.length === 0) {
+                topContent += `<div style="font-size: ${displayNameSize}px; line-height: 1;">الاسم (معاينة)</div>`;
+            }
+            topContent += `<div style="font-size: ${displayCompSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${compText}</div>`;
             topTextEl.innerHTML = topContent;
 
             let bottomContent = '';
-            if (numText && !namesArray.length) bottomContent += `<div>${numText}</div>`;
-            if (companionsPos === 'bottom' && compText) bottomContent += `<div>${compText}</div>`;
+            if (numText && !namesArray.length) {
+                bottomContent += `<div style="font-size: ${displayNumSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${numText}</div>`;
+            }
             bottomTextEl.innerHTML = bottomContent;
         }
 
@@ -690,9 +700,16 @@
             
             const folderTickets = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName);
             
+            const ticketsWithIndex = folderTickets.map((t, idx) => ({ ...t, absoluteIndex: idx + 1 }));
+            
+            ticketsWithIndex.sort((a, b) => {
+                if (a.is_used === b.is_used) return 0;
+                return a.is_used ? -1 : 1; 
+            });
+
             grid.innerHTML = '';
-            for (let i = 0; i < folderTickets.length; i++) { 
-                await renderMergeTicketCard(grid, folderTickets[i], i + 1); 
+            for (let i = 0; i < ticketsWithIndex.length; i++) { 
+                await renderMergeTicketCard(grid, ticketsWithIndex[i], ticketsWithIndex[i].absoluteIndex); 
             }
         }
 
@@ -702,7 +719,7 @@
             document.body.style.overflow = 'auto';
         }
 
-        function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos, compFormat) {
+        function generateTicketBlob(code, indexNumber, guestName, companionsCount, compFormat) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 
@@ -738,42 +755,42 @@
                             selectionWidth = parseInt(document.getElementById('qrSizeInput').value);
                             ctx.drawImage(qrSource, selectedX, selectedY, selectionWidth, selectionWidth);
                             
+                            const nameFontSize = parseInt(document.getElementById('nameFontSize').value) || 30;
+                            const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
+                            const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
+
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
-                            const fontSize = Math.max(14, Math.floor(selectionWidth * fontRatio));
-                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center'; 
 
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = "";
+                            let compText = "(دعوة شخصية)";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
                                     : `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}`;
                             }
                             
-                            let currentTopY = selectedY - 10;
+                            const gap = 5;
+                            let currentTopY = selectedY - gap;
                             ctx.textBaseline = 'bottom';
-                            if (companionsPos === 'top' && compText) {
-                                ctx.fillText(compText, centerX, currentTopY);
-                                currentTopY -= (fontSize + 5);
-                            }
+                            
+                            ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
+                            ctx.fillText(compText, centerX, currentTopY);
+                            currentTopY -= (compFontSize + gap);
+                            
                             if (guestName) {
+                                ctx.font = `bold ${nameFontSize}px "Tajawal", sans-serif`;
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
-                            let currentBottomY = selectedY + selectionWidth + 10;
+                            let currentBottomY = selectedY + selectionWidth + gap;
                             ctx.textBaseline = 'top';
                             
                             if (!guestName) {
+                                ctx.font = `bold ${numFontSize}px "Tajawal", sans-serif`;
                                 ctx.fillText(arabicNumber, centerX, currentBottomY);
-                                currentBottomY += (fontSize + 5);
-                            }
-
-                            if (companionsPos === 'bottom' && compText) {
-                                ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
                             canvas.toBlob((blob) => { 
@@ -786,7 +803,7 @@
             });
         }
 
-        function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, companionsPos, compFormat) {
+        function generateQROnlyBlob(code, indexNumber, guestName, companionsCount, compFormat) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
                 
@@ -820,32 +837,37 @@
                         setTimeout(() => {
                             const canvas = document.createElement('canvas'); 
                             const ctx = canvas.getContext('2d');
-                            const fontRatio = (parseInt(document.getElementById('fontSizeInput').value) || 11) / 100;
-                            const fontSize = Math.max(14, Math.floor(qrSize * fontRatio));
+                            
+                            const nameFontSize = parseInt(document.getElementById('nameFontSize').value) || 30;
+                            const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
+                            const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = "";
+                            let compText = "(دعوة شخصية)";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
                                     : `عدد المرافقين / ${convertToArabicNumbers(companionsCount)}`;
                             }
 
-                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
-
+                            ctx.font = `bold ${nameFontSize}px "Tajawal", sans-serif`;
                             const nameWidth = guestName ? ctx.measureText(guestName).width : 0;
-                            const compWidth = compText ? ctx.measureText(compText).width : 0;
+                            
+                            ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
+                            const compWidth = ctx.measureText(compText).width;
+                            
+                            ctx.font = `bold ${numFontSize}px "Tajawal", sans-serif`;
                             const numWidth = (!guestName) ? ctx.measureText(arabicNumber).width : 0;
+                            
                             const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
 
-                            let extraTop = 20; 
-                            if (guestName) extraTop += fontSize + 15;
-                            if (companionsPos === 'top' && compText) extraTop += fontSize + 15;
+                            const gap = 5;
+                            let extraTop = gap + compFontSize + gap; 
+                            if (guestName) extraTop += nameFontSize + gap;
 
-                            let extraBottom = 20; 
-                            if (!guestName) extraBottom += fontSize + 15;
-                            if (companionsPos === 'bottom' && compText) extraBottom += fontSize + 15;
+                            let extraBottom = gap; 
+                            if (!guestName) extraBottom += numFontSize + gap;
                             
                             canvas.width = Math.max(qrSize + 60, maxTextWidth + 80); 
                             canvas.height = qrSize + extraTop + extraBottom;
@@ -858,33 +880,29 @@
                             const centerX = canvas.width / 2;
 
                             ctx.imageSmoothingEnabled = false;
-                            
                             ctx.drawImage(qrSource, drawX, drawY, qrSize, qrSize);
                             
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
-                            ctx.font = `bold ${fontSize}px "Tajawal", sans-serif`;
                             ctx.textAlign = 'center';
                             
-                            let currentTopY = drawY - 15;
+                            let currentTopY = drawY - gap;
                             ctx.textBaseline = 'bottom';
-                            if (companionsPos === 'top' && compText) {
-                                ctx.fillText(compText, centerX, currentTopY);
-                                currentTopY -= (fontSize + 10);
-                            }
+                            
+                            ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
+                            ctx.fillText(compText, centerX, currentTopY);
+                            currentTopY -= (compFontSize + gap);
+
                             if (guestName) {
+                                ctx.font = `bold ${nameFontSize}px "Tajawal", sans-serif`;
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
 
-                            let currentBottomY = drawY + qrSize + 15;
+                            let currentBottomY = drawY + qrSize + gap;
                             ctx.textBaseline = 'top';
                             
                             if (!guestName) {
+                                ctx.font = `bold ${numFontSize}px "Tajawal", sans-serif`;
                                 ctx.fillText(arabicNumber, centerX, currentBottomY);
-                                currentBottomY += (fontSize + 10);
-                            }
-
-                            if (companionsPos === 'bottom' && compText) {
-                                ctx.fillText(compText, centerX, currentBottomY);
                             }
                             
                             canvas.toBlob((blob) => { 
@@ -904,7 +922,6 @@
             const namesInput = document.getElementById('guestNamesInput').value;
             const namesArray = namesInput.split('\n').map(n => n.trim()).filter(n => n !== '');
             const companionsCount = parseInt(document.getElementById('companionsInput').value) || 0;
-            const companionsPos = document.getElementById('companionsPos').value;
             const compFormat = document.getElementById('companionsFormat').value;
 
             if (mode === 'merged' && !originalInviteImage) { showToast("الرجاء تحميل تصميم الدعوة أولاً! 🖼️", 'warning'); return; }
@@ -919,8 +936,7 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                const existingTicketsCount = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName).length;
-                let startIndex = existingTicketsCount + 1;
+                let startIndex = 1;
 
                 const processSingleTicket = async (loopIndex) => {
                     const codePrefix = compFormat === 'includes' ? 'INC-' : 'COM-';
@@ -934,11 +950,11 @@
                     let mimeType;
                     
                     if (mode === 'merged') { 
-                        imageBlob = await generateTicketBlob(code, ticketNum, guestName, companionsCount, companionsPos, compFormat); 
+                        imageBlob = await generateTicketBlob(code, ticketNum, guestName, companionsCount, compFormat); 
                         ext = 'jpg';
                         mimeType = 'image/jpeg';
                     } else { 
-                        imageBlob = await generateQROnlyBlob(code, ticketNum, guestName, companionsCount, companionsPos, compFormat); 
+                        imageBlob = await generateQROnlyBlob(code, ticketNum, guestName, companionsCount, compFormat); 
                         ext = 'jpg';
                         mimeType = 'image/jpeg';
                     }
