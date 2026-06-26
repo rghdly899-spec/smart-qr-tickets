@@ -492,7 +492,6 @@
             bottomTextEl.style.fontSize = displayFontSize + 'px';
             qrImgEl.style.color = color;
 
-            // إزالة الأقواس من صيغة عدد المرافقين والإبقاء عليها في الدعوة تشمل
             let compText = "";
             if (companionsCount > 0) {
                 compText = compFormat === 'includes' 
@@ -697,12 +696,6 @@
             }
         }
 
-        function closeFolder() {
-            currentActiveFolder = null;
-            document.getElementById('folderModal').classList.add('hidden');
-            document.body.style.overflow = 'auto'; 
-        }
-
         function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos, compFormat) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -748,7 +741,6 @@
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            // إزالة الأقواس من عدد المرافقين
                             let compText = "";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
@@ -827,7 +819,6 @@
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            // إزالة الأقواس من عدد المرافقين
                             let compText = "";
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
@@ -922,10 +913,11 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                let startIndex = 1;
+                // التعديل الخاص فيك: يبحث في المجلد وكم تذكرة جواه، ويخلي رقم البداية يكمل من بعد آخر تذكرة
+                const existingTicketsCount = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName).length;
+                let startIndex = existingTicketsCount + 1;
 
                 const processSingleTicket = async (loopIndex) => {
-                    // التعديل هنا: نغير بداية الكود عشان شاشة الفحص تعرف الصيغة
                     const codePrefix = compFormat === 'includes' ? 'INC-' : 'COM-';
                     const code = codePrefix + Math.random().toString(36).substr(2, 6).toUpperCase();
                     
@@ -1137,7 +1129,6 @@
                 
                 const guestNameText = data.guest_name ? `<div class="text-indigo-700 mt-3 text-2xl font-black bg-white/50 py-2 rounded-xl border border-indigo-200">باسم: ${data.guest_name}</div>` : '';
                 
-                // قراءة الصيغة من الكود وتطبيقها
                 const arabicCompCount = convertToArabicNumbers(data.companions_count);
                 let compString = '';
                 
