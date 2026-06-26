@@ -696,6 +696,12 @@
             }
         }
 
+        function closeFolder() {
+            currentActiveFolder = null;
+            document.getElementById('folderModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
         function generateTicketBlob(code, indexNumber, guestName, companionsCount, companionsPos, compFormat) {
             return new Promise((resolve) => {
                 const verifyUrl = `${window.location.href.split('?')[0]}?code=${code}`;
@@ -913,7 +919,6 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                // التعديل الخاص فيك: يبحث في المجلد وكم تذكرة جواه، ويخلي رقم البداية يكمل من بعد آخر تذكرة
                 const existingTicketsCount = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName).length;
                 let startIndex = existingTicketsCount + 1;
 
