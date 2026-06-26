@@ -513,7 +513,9 @@
             } else if (namesArray.length === 0) {
                 topContent += `<div style="font-size: ${displayNameSize}px; line-height: 1;">الاسم (معاينة)</div>`;
             }
-            topContent += `<div style="font-size: ${displayCompSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${compText}</div>`;
+            if (compText !== "") {
+                topContent += `<div style="font-size: ${displayCompSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${compText}</div>`;
+            }
             topTextEl.innerHTML = topContent;
 
             let bottomContent = '';
@@ -776,9 +778,11 @@
                             let currentTopY = selectedY - gap;
                             ctx.textBaseline = 'bottom';
                             
-                            ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
-                            ctx.fillText(compText, centerX, currentTopY);
-                            currentTopY -= (compFontSize + gap);
+                            if (compText !== "") {
+                                ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
+                                ctx.fillText(compText, centerX, currentTopY);
+                                currentTopY -= (compFontSize + gap);
+                            }
                             
                             if (guestName) {
                                 ctx.font = `bold ${nameFontSize}px "Tajawal", sans-serif`;
@@ -863,7 +867,8 @@
                             const maxTextWidth = Math.max(nameWidth, compWidth, numWidth);
 
                             const gap = 5;
-                            let extraTop = gap + compFontSize + gap; 
+                            let extraTop = gap; 
+                            if (compText !== "") extraTop += compFontSize + gap;
                             if (guestName) extraTop += nameFontSize + gap;
 
                             let extraBottom = gap; 
@@ -888,21 +893,15 @@
                             let currentTopY = drawY - gap;
                             ctx.textBaseline = 'bottom';
                             
-                            ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
-                            ctx.fillText(compText, centerX, currentTopY);
-                            currentTopY -= (compFontSize + gap);
+                            if (compText !== "") {
+                                ctx.font = `bold ${compFontSize}px "Tajawal", sans-serif`;
+                                ctx.fillText(compText, centerX, currentTopY);
+                                currentTopY -= (compFontSize + gap);
+                            }
 
                             if (guestName) {
                                 ctx.font = `bold ${nameFontSize}px "Tajawal", sans-serif`;
                                 ctx.fillText(guestName, centerX, currentTopY);
-                            }
-
-                            let currentBottomY = drawY + qrSize + gap;
-                            ctx.textBaseline = 'top';
-                            
-                            if (!guestName) {
-                                ctx.font = `bold ${numFontSize}px "Tajawal", sans-serif`;
-                                ctx.fillText(arabicNumber, centerX, currentBottomY);
                             }
                             
                             canvas.toBlob((blob) => { 
