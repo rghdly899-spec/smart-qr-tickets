@@ -634,7 +634,8 @@
                     .from('tickets')
                     .select('*')
                     .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: true });
+                    .order('created_at', { ascending: true })
+                    .order('id', { ascending: true }); // تم الإضافة هنا لضمان الترتيب التسلسلي الدقيق
                     
                 if (error) { 
                     if (!currentActiveFolder) container.innerHTML = '<p class="text-red-500 text-center font-bold">فشل تحميل التذاكر</p>'; 
@@ -705,7 +706,8 @@
             const ticketsWithIndex = folderTickets.map((t, idx) => ({ ...t, absoluteIndex: idx + 1 }));
             
             ticketsWithIndex.sort((a, b) => {
-                if (a.is_used === b.is_used) return 0;
+                // تم التعديل هنا لفرز الواجهة بالتسلسل الصحيح بناءً على رقم التذكرة
+                if (a.is_used === b.is_used) return a.absoluteIndex - b.absoluteIndex;
                 return a.is_used ? -1 : 1; 
             });
 
@@ -765,7 +767,7 @@
                             ctx.textAlign = 'center'; 
 
                             const centerX = selectedX + (selectionWidth / 2);
-                            const arabicNumber = convertToArabicNumbers(String(indexNumber).padStart(3, '0'));
+                            const arabicNumber = convertToArabicNumbers(indexNumber);
                             
                             let compText = guestName ? "" : "(الدعوة شخصية)";
                             if (companionsCount > 0) {
@@ -846,7 +848,7 @@
                             const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
                             const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
 
-                            const arabicNumber = convertToArabicNumbers(String(indexNumber).padStart(3, '0'));
+                            const arabicNumber = convertToArabicNumbers(indexNumber);
                             
                             let compText = guestName ? "" : "(الدعوة شخصية)";
                             if (companionsCount > 0) {
@@ -1103,7 +1105,7 @@
             for (let i = 0; i < checkboxes.length; i++) {
                 const cb = checkboxes[i];
                 const ticketCode = cb.dataset.ticketCode;
-                const ticketNumber = String(cb.dataset.ticketNumber).padStart(3, '0');
+                const ticketNumber = cb.dataset.ticketNumber;
                 
                 const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
                 const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
