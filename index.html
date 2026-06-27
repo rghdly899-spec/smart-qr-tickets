@@ -904,6 +904,14 @@
                                 ctx.fillText(guestName, centerX, currentTopY);
                             }
                             
+                            let currentBottomY = drawY + qrSize + gap;
+                            ctx.textBaseline = 'top';
+                            
+                            if (!guestName) {
+                                ctx.font = `bold ${numFontSize}px "Tajawal", sans-serif`;
+                                ctx.fillText(arabicNumber, centerX, currentBottomY);
+                            }
+
                             canvas.toBlob((blob) => { 
                                 tempQrDiv.remove();
                                 resolve(blob); 
