@@ -943,7 +943,8 @@
                 const count = namesArray.length > 0 ? namesArray.length : parseInt(document.getElementById('ticketCount').value);
                 const ticketsToInsert = [];
                 
-                let startIndex = 1;
+                const existingFolderTickets = allTicketsData.filter(t => (t.event_name || 'عام (بدون مجلد)') === eventName);
+                let startIndex = existingFolderTickets.length + 1;
 
                 const processSingleTicket = async (loopIndex) => {
                     const codePrefix = compFormat === 'includes' ? 'INC-' : 'COM-';
