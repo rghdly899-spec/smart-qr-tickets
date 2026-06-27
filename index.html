@@ -765,7 +765,7 @@
                             ctx.textAlign = 'center'; 
 
                             const centerX = selectedX + (selectionWidth / 2);
-                            const arabicNumber = convertToArabicNumbers(indexNumber);
+                            const arabicNumber = convertToArabicNumbers(String(indexNumber).padStart(3, '0'));
                             
                             let compText = guestName ? "" : "(الدعوة شخصية)";
                             if (companionsCount > 0) {
@@ -846,7 +846,7 @@
                             const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
                             const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
 
-                            const arabicNumber = convertToArabicNumbers(indexNumber);
+                            const arabicNumber = convertToArabicNumbers(String(indexNumber).padStart(3, '0'));
                             
                             let compText = guestName ? "" : "(الدعوة شخصية)";
                             if (companionsCount > 0) {
@@ -1103,7 +1103,7 @@
             for (let i = 0; i < checkboxes.length; i++) {
                 const cb = checkboxes[i];
                 const ticketCode = cb.dataset.ticketCode;
-                const ticketNumber = cb.dataset.ticketNumber;
+                const ticketNumber = String(cb.dataset.ticketNumber).padStart(3, '0');
                 
                 const jpgUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.jpg`).data.publicUrl;
                 const pngUrl = supabaseClient.storage.from('tickets').getPublicUrl(`${currentUser.id}/${ticketCode}.png`).data.publicUrl;
