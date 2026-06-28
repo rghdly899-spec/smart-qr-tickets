@@ -236,6 +236,10 @@
                             <option value="companions">صيغة: عدد المرافقين / X</option>
                             <option value="includes">صيغة: الدعوة تشمل (X) أشخاص</option>
                         </select>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-sm font-bold text-gray-700 mr-2 bg-gray-100 px-2 py-1.5 rounded-xl border">
+                            <input type="checkbox" id="showPersonalInvite" checked class="w-4 h-4 accent-purple-600" onchange="triggerShadowUpdate()">
+                            (الدعوة شخصية)
+                        </label>
                     </div>
 
                     <button onclick="processTickets()" id="processBtn" class="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-xl transition shadow flex justify-center items-center gap-2 ml-0 lg:ml-auto">
@@ -498,7 +502,9 @@
             bottomTextEl.style.color = color;
             qrImgEl.style.color = color;
 
-            let compText = namesArray.length > 0 ? "" : "(الدعوة شخصية)";
+            const showPersonal = document.getElementById('showPersonalInvite').checked;
+            let compText = namesArray.length > 0 ? "" : (showPersonal ? "(الدعوة شخصية)" : "");
+            
             if (companionsCount > 0) {
                 compText = compFormat === 'includes' 
                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
@@ -769,7 +775,9 @@
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = guestName ? "" : "(الدعوة شخصية)";
+                            const showPersonal = document.getElementById('showPersonalInvite').checked;
+                            let compText = guestName ? "" : (showPersonal ? "(الدعوة شخصية)" : "");
+                            
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
@@ -850,7 +858,9 @@
 
                             const arabicNumber = convertToArabicNumbers(indexNumber);
                             
-                            let compText = guestName ? "" : "(الدعوة شخصية)";
+                            const showPersonal = document.getElementById('showPersonalInvite').checked;
+                            let compText = guestName ? "" : (showPersonal ? "(الدعوة شخصية)" : "");
+                            
                             if (companionsCount > 0) {
                                 compText = compFormat === 'includes' 
                                     ? `الدعوة تشمل (${convertToArabicNumbers(companionsCount)}) أشخاص` 
