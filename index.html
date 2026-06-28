@@ -513,20 +513,21 @@
             
             const numText = !namesArray.length ? convertToArabicNumbers(1) : ""; 
 
+            // تم إضافة dir="rtl" هنا لضمان عمل الأقواس بشكل صحيح في المعاينة
             let topContent = '';
             if (guestName !== 'الاسم (معاينة)' || namesArray.length > 0) {
-                topContent += `<div style="font-size: ${displayNameSize}px; line-height: 1;">${guestName}</div>`;
+                topContent += `<div dir="rtl" style="font-size: ${displayNameSize}px; line-height: 1;">${guestName}</div>`;
             } else if (namesArray.length === 0) {
-                topContent += `<div style="font-size: ${displayNameSize}px; line-height: 1;">الاسم (معاينة)</div>`;
+                topContent += `<div dir="rtl" style="font-size: ${displayNameSize}px; line-height: 1;">الاسم (معاينة)</div>`;
             }
             if (compText !== "") {
-                topContent += `<div style="font-size: ${displayCompSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${compText}</div>`;
+                topContent += `<div dir="rtl" style="font-size: ${displayCompSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${compText}</div>`;
             }
             topTextEl.innerHTML = topContent;
 
             let bottomContent = '';
             if (numText && !namesArray.length) {
-                bottomContent += `<div style="font-size: ${displayNumSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${numText}</div>`;
+                bottomContent += `<div dir="rtl" style="font-size: ${displayNumSize}px; line-height: 1; margin-top: ${3/scaleX}px;">${numText}</div>`;
             }
             bottomTextEl.innerHTML = bottomContent;
         }
@@ -641,7 +642,7 @@
                     .select('*')
                     .eq('user_id', currentUser.id)
                     .order('created_at', { ascending: true })
-                    .order('id', { ascending: true }); // تم الإضافة هنا لضمان الترتيب التسلسلي الدقيق
+                    .order('id', { ascending: true }); 
                     
                 if (error) { 
                     if (!currentActiveFolder) container.innerHTML = '<p class="text-red-500 text-center font-bold">فشل تحميل التذاكر</p>'; 
@@ -712,7 +713,6 @@
             const ticketsWithIndex = folderTickets.map((t, idx) => ({ ...t, absoluteIndex: idx + 1 }));
             
             ticketsWithIndex.sort((a, b) => {
-                // تم التعديل هنا لفرز الواجهة بالتسلسل الصحيح بناءً على رقم التذكرة
                 if (a.is_used === b.is_used) return a.absoluteIndex - b.absoluteIndex;
                 return a.is_used ? -1 : 1; 
             });
@@ -771,6 +771,9 @@
 
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.textAlign = 'center'; 
+                            
+                            // تم إضافة هذا السطر لتوجيه الرسم على الكانفاس لليمين لليسار (يحل مشكلة الأقواس)
+                            ctx.direction = 'rtl'; 
 
                             const centerX = selectedX + (selectionWidth / 2);
                             const arabicNumber = convertToArabicNumbers(indexNumber);
@@ -852,6 +855,9 @@
                             const canvas = document.createElement('canvas'); 
                             const ctx = canvas.getContext('2d');
                             
+                            // تم الإضافة لضمان حساب القياسات بشكل صحيح
+                            ctx.direction = 'rtl';
+
                             const nameFontSize = parseInt(document.getElementById('nameFontSize').value) || 30;
                             const compFontSize = parseInt(document.getElementById('compFontSize').value) || 20;
                             const numFontSize = parseInt(document.getElementById('numFontSize').value) || 25;
@@ -901,6 +907,9 @@
                             
                             ctx.fillStyle = document.getElementById('qrColorPicker').value;
                             ctx.textAlign = 'center';
+                            
+                            // تم الإضافة هنا أيضاً لضمان رسم النص بشكل صحيح
+                            ctx.direction = 'rtl';
                             
                             let currentTopY = drawY - gap;
                             ctx.textBaseline = 'bottom';
